@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <title>Scores</title>
+
+  <link rel="shortcut icon" sizes="16x16"
+        href="https://www.gstatic.com/images/branding/productlogos/forms_2026/v2/web-16dp/logo_forms_2026_color_1x_web_16dp.png">
+
+  <!--
+    The three font links below are copied verbatim from the original saved
+    Google Forms page. Together they supply the real Forms typefaces:
+      Google Sans  - form title and buttons
+      Roboto       - question titles, options, body text
+      Product Sans - Google wordmark
+      Material Icons Extended - icon glyphs (error, etc.)
+    Google Sans and Product Sans are license-restricted but the stylesheets
+    are served publicly, so they render as long as the page is online.
+  -->
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Google+Sans_old:400,500|Roboto_old:300,400,400i,500,700&subset=latin,vietnamese,latin-ext,cyrillic,greek,cyrillic-ext,greek-ext">
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css?family=Product+Sans&subset=latin,vietnamese,latin-ext,cyrillic,greek,cyrillic-ext,greek-ext">
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/icon?family=Material+Icons+Extended">
+
+  <style>
+    /* ============================================================
+       Values below are lifted from the original Forms stylesheets:
+       the freebird bundle (body background, cards, typography) and
+       the theme <style id="WTVccd"> block (accent colour ramp).
+       ============================================================ */
+    :root {
+      /* Theme accent - rgb(87, 70, 227) throughout the original */
+      --accent:            rgb(87, 70, 227);
+      --accent-hover-bg:   rgba(87, 70, 227, 0.04);
+      --accent-focus-bg:   rgba(87, 70, 227, 0.15);
+      --accent-selected:   rgb(238, 237, 252);
+      --accent-ripple:     rgb(221, 218, 249);
+
+      --page-bg:      #f0ebf8;
+      --card-bg:      #fff;
+      --card-border:  #dadada;
+      --text:         #1f1f1f;
+      --text-muted:   rgb(104, 109, 115);
+      --text-grey:    #5f6368;
+      --error:        #db372d;
+      --control-off:  rgb(95, 99, 104);
+
+      --font-title:  "Google Sans", Roboto, Arial, sans-serif;
+      --font-body:   Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+      --font-label:  Roboto, Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* freebird: body{background-color:#f0ebf8;font-family:Roboto,...} */
+    body {
+      background-color: var(--page-bg);
+      font-family: var(--font-body);
+      margin: 0;
+      padding: 12px 0 0;
+      color: var(--text);
+    }
+
+    .form {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 0 12px;
+    }
+
+    /* freebird .geS5n - the question card */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+      padding: 24px;
+      word-wrap: break-word;
+      transition: background-color .2s cubic-bezier(0, 0, .2, 1);
+    }
+
+    /* The theme colour band across the top of the header card */
+    .card--header {
+      border-top: 10px solid var(--accent);
+      padding-top: 22px;
+    }
+
+    /* freebird .F9yp7e - form title */
+    .form-title {
+      font-family: var(--font-title);
+      font-size: 32px;
+      font-weight: 400;
+      line-height: 135%;
+      color: var(--text);
+      margin: 0;
+    }
+
+    @media screen and (max-width: 480px) {
+      .form-title { font-size: 24px; }
+    }
+
+    /* freebird .gTo7v .snByac - 14px Roboto label text */
+    .label-text,
+    .account,
+    .receipt-note {
+      font-family: var(--font-label);
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: .2px;
+      line-height: 20px;
+      color: var(--text);
+    }
+
+    .account {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--card-border);
+      color: var(--text-muted);
+    }
+
+    /* freebird .md0UAd - required-question note */
+    .required-note {
+      font-family: var(--font-label);
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: .2px;
+      line-height: 20px;
+      color: var(--error);
+      margin: 12px 0 0;
+    }
+
+    /* Question title - Roboto 16px, matching the Forms item header */
+    .question-title {
+      font-family: var(--font-label);
+      font-size: 16px;
+      font-weight: 400;
+      letter-spacing: .1px;
+      line-height: 24px;
+      color: var(--text);
+      margin: 0 0 16px;   /* freebird .z12JJ margin-bottom:16px */
+    }
+
+    /* freebird .vnumgf - the required asterisk */
+    .required-star {
+      color: var(--error);
+      padding-left: .25em;
+    }
+
+    /* ---------- Options (radio / checkbox) ---------- */
+    .option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      cursor: pointer;
+    }
+
+    /*
+      Forms draws its controls in CSS rather than with an icon font:
+      .AB7Lab is a 20px circle with a 2px rgb(95,99,104) border that
+      switches to the theme accent when selected. Reproduced here on the
+      native input so keyboard and screen-reader behaviour stay intact.
+    */
+    .option input[type="radio"],
+    .option input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      flex: none;
+      position: relative;
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      background: none;
+      border: 2px solid var(--control-off);
+      cursor: pointer;
+      transition: border-color .2s cubic-bezier(.4, 0, .2, 1),
+                  background-color .2s cubic-bezier(.4, 0, .2, 1),
+                  box-shadow .2s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .option input[type="radio"] { border-radius: 50%; }
+    .option input[type="checkbox"] { border-radius: 2px; }
+
+    /* The 40px circular hover/focus halo Forms puts around each control */
+    .option input:hover  { box-shadow: 0 0 0 10px var(--accent-hover-bg); }
+    .option input:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 10px var(--accent-focus-bg);
+    }
+
+    .option input[type="radio"]:checked { border-color: var(--accent); }
+
+    .option input[type="radio"]:checked::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      border-radius: 50%;
+      background-color: var(--accent);
+    }
+
+    .option input[type="checkbox"]:checked {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Checkmark, drawn the same way Material does it */
+    .option input[type="checkbox"]:checked::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 0;
+      width: 6px;
+      height: 11px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .email-value { font-weight: 500; word-break: break-all; }
+
+    /* ---------- Short answer text field ---------- */
+    /*
+      freebird .whsOnd is the bare input; .Yp9mw is the underline that
+      picks up the theme colour on focus. Placeholder colour is .ndJi5d.
+    */
+    .text-field {
+      position: relative;
+      max-width: min(100%, 336px);
+      border-bottom: 1px solid rgba(0, 0, 0, .12);
+      transition: border-color .2s cubic-bezier(.4, 0, .2, 1);
+      padding-bottom: 8px;
+    }
+
+    .text-field:focus-within { border-bottom-color: var(--accent); }
+
+    .text-field::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      background-color: var(--accent);
+      transform: scaleX(0);
+      transition: transform .2s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .text-field:focus-within::after { transform: scaleX(1); }
+
+    .text-field input {
+      display: block;
+      width: 100%;
+      background-color: transparent;
+      border: none;
+      outline: none;
+      margin: 0;
+      padding: 0;
+      height: 24px;
+      line-height: 24px;
+      font: 400 16px var(--font-body);
+      color: var(--text);
+    }
+
+    .text-field input::placeholder {
+      color: rgba(0, 0, 0, 0.38);
+      opacity: 1;
+    }
+
+    .card.has-error .text-field { border-bottom-color: var(--error); }
+    .card.has-error .text-field::after { background-color: var(--error); }
+
+    /* ---------- Buttons ---------- */
+    /* freebird .UQuaGc - Google Sans 14px/500, 4px radius (not a pill) */
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding-bottom: 10px;
+      margin-bottom: 24px;
+    }
+
+    .btn {
+      font-family: var(--font-title);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: .25px;
+      line-height: 20px;
+      border: 0;
+      border-radius: 4px;
+      padding: 10px 24px;
+      cursor: pointer;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      transition: background .2s .1s, box-shadow .28s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    /* Theme .QvWxOd - filled submit button, accent-tinted elevation */
+    .btn-filled {
+      background-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-filled:hover {
+      box-shadow: 0 2px 1px -1px rgba(87, 70, 227, .2),
+                  0 1px 1px 0    rgba(87, 70, 227, .14),
+                  0 1px 3px 0    rgba(87, 70, 227, .12);
+    }
+
+    .btn-filled:active {
+      box-shadow: 0 3px 5px -1px rgba(87, 70, 227, .2),
+                  0 6px 10px 0   rgba(87, 70, 227, .14),
+                  0 1px 18px 0   rgba(87, 70, 227, .12);
+    }
+
+    .btn-filled:disabled { opacity: .54; cursor: default; box-shadow: none; }
+
+    /* Theme .TFBnVe - flat text button in the accent colour */
+    .btn-text {
+      background: none;
+      color: var(--accent);
+      padding: 10px 8px;
+    }
+
+    .btn-text:hover { background-color: var(--accent-hover-bg); }
+    .btn-text:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    .btn-link {
+      font-family: var(--font-label);
+      font-size: 14px;
+      background: none;
+      border: 0;
+      padding: 0;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .btn-link:hover { text-decoration: underline; }
+
+    /* ---------- Material Icons Extended ---------- */
+    .material-icons-extended {
+      font-family: "Material Icons Extended";
+      font-weight: normal;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      font-feature-settings: "liga";
+      -webkit-font-feature-settings: "liga";
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---------- Validation ---------- */
+    /* freebird .SL4Sz error slot, .md0UAd red */
+    .error-msg {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-label);
+      font-size: 12px;
+      letter-spacing: .3px;
+      line-height: 16px;
+      color: var(--error);
+      margin: 12px 0 0;
+    }
+
+    .error-msg.is-visible { display: flex; }
+
+    .receipt-note { color: var(--text-muted); margin: 0 0 16px; }
+
+    /* ---------- Confirmation ---------- */
+    .confirmation { display: none; }
+    .confirmation p { margin: 16px 0; }
+    body.is-submitted .form-body { display: none; }
+    body.is-submitted .confirmation { display: block; }
+
+    .status {
+      font-family: var(--font-label);
+      font-size: 14px;
+      line-height: 20px;
+      margin: 0 0 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background-color: var(--accent-selected);
+      color: var(--text);
+    }
+
+    .status[hidden] { display: none; }
+    .status.is-error { background-color: #fce8e6; color: var(--error); }
+
+    /* ---------- Footer ---------- */
+    footer {
+      font-family: var(--font-label);
+      font-size: 12px;
+      line-height: 16px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 8px 0 32px;
+    }
+
+    footer p { margin: 4px 0; }
+    footer a { color: var(--text-muted); }
+  </style>
+</head>
+
+<body>
+  <main class="form">
+
+    <!-- ==================== Form ==================== -->
+    <div class="form-body">
+      <form id="scores-form" novalidate>
+
+        <!-- ---------- Header ---------- -->
+        <section class="card card--header">
+          <h1 class="form-title">Scores</h1>
+
+          <div class="account">
+            <span id="account-email">rikikowalczyk@gmail.com</span>
+            <button type="button" class="btn-link" id="switch-account">Switch account</button>
+          </div>
+
+          <p class="required-note">* Indicates required question</p>
+        </section>
+
+        <!-- ---------- Email ---------- -->
+        <section class="card" id="email-card">
+          <h2 class="question-title">
+            Email<span class="required-star" aria-hidden="true">*</span>
+          </h2>
+
+          <label class="option">
+            <input type="checkbox" id="email-consent" checked>
+            <span class="label-text">
+              Record <span class="email-value">rikikowalczyk@gmail.com</span>
+              as the email to be included with my response
+            </span>
+          </label>
+
+          <p class="error-msg" id="email-error" role="alert">
+            <i class="material-icons-extended" aria-hidden="true">error</i>
+            <span>This is a required question</span>
+          </p>
+        </section>
+
+        <!-- ---------- Short answer (text field) ---------- -->
+        <section class="card" id="name-card">
+          <h2 class="question-title" id="name-label">
+            Name<span class="required-star" aria-hidden="true">*</span>
+          </h2>
+
+          <div class="text-field">
+            <input type="text" id="name-input" name="name"
+                   placeholder="Your answer" autocomplete="name"
+                   aria-labelledby="name-label" aria-required="true">
+          </div>
+
+          <p class="error-msg" id="name-error" role="alert">
+            <i class="material-icons-extended" aria-hidden="true">error</i>
+            <span>This is a required question</span>
+          </p>
+        </section>
+
+        <!-- ---------- Multiple choice ---------- -->
+        <section class="card" id="q1-card">
+          <h2 class="question-title" id="q1-label">Untitled Question</h2>
+
+          <div role="radiogroup" aria-labelledby="q1-label">
+            <label class="option">
+              <input type="radio" name="choice" value="Option 1">
+              <span class="label-text">Option 1</span>
+            </label>
+          </div>
+
+          <button type="button" class="btn btn-text" data-clear-group="choice">
+            Clear selection
+          </button>
+        </section>
+
+        <!-- ---------- Actions ---------- -->
+        <p class="receipt-note">
+          A copy of your response will be emailed to
+          <span class="email-value">rikikowalczyk@gmail.com</span>.
+        </p>
+
+        <p class="status" id="status" hidden role="status"></p>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-filled" id="submit-btn">Submit</button>
+          <button type="button" class="btn btn-text" id="clear-form">Clear form</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ==================== Confirmation ==================== -->
+    <section class="card confirmation" id="confirmation" tabindex="-1">
+      <h1 class="form-title">Scores</h1>
+      <p class="label-text">Your response has been recorded.</p>
+      <p><button type="button" class="btn-link" id="submit-another">Submit another response</button></p>
+    </section>
+
+    <footer>
+      <p>This content is neither created nor endorsed by Google.</p>
+      <p>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLScjR2HiWF2Mz0JhyLrqmg8VEk9SOGAtpI1msE9YjdXUdFitgA/viewform">
+          Open the original form
+        </a>
+      </p>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ============================================================
+         Responses are posted to a Netlify Function, which is the only
+         thing that talks to Supabase. No API keys, project URL, or
+         table names appear anywhere in this file on purpose - they
+         live in environment variables on the server side.
+
+         See netlify/functions/submit.mjs.
+         ============================================================ */
+      var SUBMIT_ENDPOINT = '/api/submit';
+
+      var form = document.getElementById('scores-form');
+      var emailConsent = document.getElementById('email-consent');
+      var emailCard = document.getElementById('email-card');
+      var emailError = document.getElementById('email-error');
+      var nameInput = document.getElementById('name-input');
+      var nameCard = document.getElementById('name-card');
+      var nameError = document.getElementById('name-error');
+      var submitBtn = document.getElementById('submit-btn');
+      var confirmation = document.getElementById('confirmation');
+      var statusEl = document.getElementById('status');
+
+      var email = 'rikikowalczyk@gmail.com';
+
+      function radios() {
+        return form.querySelectorAll('input[type="radio"]');
+      }
+
+      function setError(card, msgEl, show) {
+        card.classList.toggle('has-error', show);
+        msgEl.classList.toggle('is-visible', show);
+      }
+
+      function setStatus(text, isError) {
+        if (!text) {
+          statusEl.hidden = true;
+          return;
+        }
+        statusEl.textContent = text;
+        statusEl.classList.toggle('is-error', !!isError);
+        statusEl.hidden = false;
+      }
+
+      /* ---------- "Clear selection" for any radio group ---------- */
+      document.querySelectorAll('[data-clear-group]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var name = btn.getAttribute('data-clear-group');
+          form.querySelectorAll('input[type="radio"][name="' + name + '"]')
+            .forEach(function (radio) { radio.checked = false; });
+        });
+      });
+
+      /* ---------- Clear each error as the field is corrected ---------- */
+      emailConsent.addEventListener('change', function () {
+        if (emailConsent.checked) { setError(emailCard, emailError, false); }
+      });
+
+      nameInput.addEventListener('input', function () {
+        if (nameInput.value.trim()) { setError(nameCard, nameError, false); }
+      });
+
+      /* ---------- Validation ---------- */
+      function validate() {
+        var emailOk = emailConsent.checked;
+        var nameOk = nameInput.value.trim() !== '';
+
+        setError(emailCard, emailError, !emailOk);
+        setError(nameCard, nameError, !nameOk);
+
+        var firstBad = !emailOk ? emailCard : (!nameOk ? nameCard : null);
+        if (firstBad) {
+          firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return emailOk && nameOk;
+      }
+
+      /* ---------- Collect the answers into one row ---------- */
+      function buildRow() {
+        var checked = form.querySelector('input[type="radio"]:checked');
+        return {
+          email: emailConsent.checked ? email : null,
+          name: nameInput.value.trim(),
+          choice: checked ? checked.value : null
+        };
+      }
+
+      /* ---------- Hand the answers to the serverless function ---------- */
+      function saveResponse(row) {
+        return fetch(SUBMIT_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(row)
+        }).then(function (res) {
+          return res.json().catch(function () { return {}; })
+            .then(function (body) {
+              if (res.ok) { return; }
+              throw new Error(body.error || ('Submission failed (' + res.status + ').'));
+            });
+        }, function (networkError) {
+          // fetch() only rejects when the request never completed.
+          console.error(networkError);
+          throw new Error(
+            'Could not reach the server. If you opened this file directly, ' +
+            'start it with "netlify dev" and use the address it prints.'
+          );
+        });
+      }
+
+      /* ---------- Submit ---------- */
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        setStatus('');
+
+        if (!validate()) { return; }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting…';
+
+        saveResponse(buildRow())
+          .then(function () {
+            document.body.classList.add('is-submitted');
+            confirmation.focus();
+            window.scrollTo(0, 0);
+          })
+          .catch(function (err) {
+            setStatus(err.message, true);
+          })
+          .then(function () {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit';
+          });
+      });
+
+      /* ---------- Reset helpers ---------- */
+      function resetAnswers() {
+        radios().forEach(function (radio) { radio.checked = false; });
+        nameInput.value = '';
+        emailConsent.checked = true;
+        setError(emailCard, emailError, false);
+        setError(nameCard, nameError, false);
+        setStatus('');
+      }
+
+      document.getElementById('clear-form').addEventListener('click', function () {
+        if (window.confirm('Clear form?\nThis will remove your answers from all questions.')) {
+          resetAnswers();
+        }
+      });
+
+      document.getElementById('submit-another').addEventListener('click', function () {
+        document.body.classList.remove('is-submitted');
+        resetAnswers();
+        window.scrollTo(0, 0);
+      });
+
+      /* ---------- Switch account ---------- */
+      document.getElementById('switch-account').addEventListener('click', function () {
+        var next = window.prompt('Email address to submit with:', email);
+        if (next === null) { return; }
+        next = next.trim();
+        if (!next) { return; }
+        email = next;
+        document.getElementById('account-email').textContent = next;
+        document.querySelectorAll('.email-value').forEach(function (el) {
+          el.textContent = next;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

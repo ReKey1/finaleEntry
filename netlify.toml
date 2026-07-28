@@ -1,0 +1,21 @@
+# There is no build command on purpose. The page is plain static HTML and
+# the function has no dependencies, so nothing needs compiling or bundling.
+# Secrets stay out of the browser because they live in the function, not
+# because a build step strips them.
+
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+# Friendlier endpoint than /.netlify/functions/submit
+[[redirects]]
+  from = "/api/submit"
+  to = "/.netlify/functions/submit"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Referrer-Policy = "strict-origin-when-cross-origin"

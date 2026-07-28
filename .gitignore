@@ -1,0 +1,14 @@
+# Local environment variables - never commit these
+.env
+.env.*
+!.env.example
+
+# Netlify CLI state
+.netlify/
+
+node_modules/
+
+# The original saved Google Forms page. It contains a personal email
+# address and the form's anti-abuse tokens. Kept locally for reference;
+# drop this line if the repository is private and you want it tracked.
+test.original.html
