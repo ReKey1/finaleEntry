@@ -968,17 +968,19 @@
       var CELEBRATION_TEXT = '踊る阿呆に見る阿呆同じ阿呆なら踊らにゃ損々';
 
       /*
-        The six welcomes from the form description, in the order they appear
-        there. Every other row carries the lot, rotated to start on a
-        different one, so all six show up and no two rows read alike.
+        Just the word for "welcome", pulled out of each line of the form
+        description and kept in the order they appear there. The Devanagari
+        one is deliberately left out: its matras sit high above the headline
+        and the rows crop at 10% of the viewport, so it was the one script
+        here at real risk of having its tops shaved off. Five words, five
+        welcome rows, one each.
       */
       var WELCOMES = [
-        'ようこそ、23の世界へ',
-        'welcome to 23 world',
-        '23의 세계에 오신 것을 환영합니다',
-        'مرحبًا بكم في عالم23',
-        '欢迎来到23的世界',
-        '23 की दुनिया में आपका स्वागत है'
+        'ようこそ',
+        'welcome',
+        '환영합니다',
+        'مرحبًا',
+        '欢迎'
       ];
 
       var WELCOME_SEP = '　·　';
@@ -1134,23 +1136,20 @@
       // CJK, kana and hangul sit on a full em; everything else is far narrower.
       var WIDE_RE = /[\u2E80-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF\uFF00-\uFF60]/;
 
-      /* What a given row scrolls: the dancing-fools line, or the welcomes. */
+      /*
+        The unit a given row repeats: the dancing-fools line, or one welcome.
+        Odd rows take them in order, so the five welcomes land one to a row.
+
+        The welcome carries its own trailing separator, otherwise repeating it
+        would read as one long welcomewelcomewelcome. The isolate marks around
+        it stop the Arabic from dragging those separators to the wrong side -
+        the bidi algorithm reorders across the whole line, not per word.
+      */
       function rowText(i) {
         if (i % 2 === 0) { return CELEBRATION_TEXT; }
 
-        var start = ((i - 1) / 2) % WELCOMES.length;
-        var parts = [];
-
-        for (var n = 0; n < WELCOMES.length; n++) {
-          /*
-            First-strong isolates. Without them the Arabic drags the
-            separators around it to the wrong side, because the bidi
-            algorithm reorders across the whole line rather than per phrase.
-          */
-          parts.push('\u2068' + WELCOMES[(start + n) % WELCOMES.length] + '\u2069');
-        }
-
-        return parts.join(WELCOME_SEP);
+        var word = WELCOMES[((i - 1) / 2) % WELCOMES.length];
+        return '\u2068' + word + '\u2069' + WELCOME_SEP;
       }
 
       /*
