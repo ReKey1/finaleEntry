@@ -32,13 +32,43 @@
        the freebird bundle (body background, cards, typography) and
        the theme <style id="WTVccd"> block (accent colour ramp).
        ============================================================ */
+    /*
+      Once a response is saved the page is themed off one animated hue.
+      Registering it lets it be interpolated - an unregistered custom property
+      is just a token and would snap between keyframes instead of sweeping.
+      246deg is the hue of the original rgb(87, 70, 227), so until the class
+      goes on - and in any browser that ignores @property - --rb-hue rests at
+      the plain declaration in :root and the theme is the original purple.
+
+      The class lives on <html> rather than <body> because the accent tokens
+      are declared on :root, and a custom property animated further down the
+      tree cannot reach back up to change what they compute to.
+    */
+    @property --rb-hue {
+      syntax: '<angle>';
+      inherits: true;
+      initial-value: 246deg;
+    }
+
+    :root.is-rainbow { animation: rb-cycle 9s linear infinite; }
+    @keyframes rb-cycle { to { --rb-hue: 606deg; } }   /* 246 + one full turn */
+
     :root {
-      /* Theme accent - rgb(87, 70, 227) throughout the original */
-      --accent:            rgb(87, 70, 227);
-      --accent-hover-bg:   rgba(87, 70, 227, 0.04);
-      --accent-focus-bg:   rgba(87, 70, 227, 0.15);
-      --accent-selected:   rgb(238, 237, 252);
-      --accent-ripple:     rgb(221, 218, 249);
+      /* Theme accent - rgb(87, 70, 227) in the original, now hue-cycled */
+      --rb-hue:            246deg;
+      --accent:            hsl(var(--rb-hue) 75% 58%);
+      --accent-hover-bg:   hsl(var(--rb-hue) 75% 58% / 0.04);
+      --accent-focus-bg:   hsl(var(--rb-hue) 75% 58% / 0.15);
+      --accent-selected:   hsl(var(--rb-hue) 70% 96%);
+      --accent-ripple:     hsl(var(--rb-hue) 66% 92%);
+
+      /*
+        The full spectrum, used wherever one flat hue is not enough: card
+        borders, headings, the submit button and the celebration overlay.
+        It opens and closes on the same red so it tiles without a seam.
+      */
+      --rb-band: linear-gradient(90deg,
+        #ff004d, #ff7a00, #ffe600, #39d353, #00c2ff, #5746e3, #c14bff, #ff004d);
 
       /* theme .D8bnZd, the class on the original <body> */
       --page-bg:      rgb(238, 237, 252);
@@ -72,6 +102,12 @@
       padding: 0 12px;
     }
 
+    /*
+      One tile of the spectrum, shared by every surface that scrolls it, so
+      the borders, headings, options and the button all travel together.
+    */
+    @keyframes rb-slide { to { background-position: 400px 0; } }
+
     /* freebird .geS5n - the question card */
     .card {
       background-color: var(--card-bg);
@@ -89,6 +125,41 @@
       padding-top: 22px;
     }
 
+    /*
+      The card border turns into a gradient rather than a colour: two
+      background layers, the card fill clipped to the padding box and the
+      spectrum clipped to the border box, so the rainbow shows only in the
+      2px the border occupies.
+    */
+    .is-rainbow .card {
+      background-image: linear-gradient(var(--card-bg), var(--card-bg)), var(--rb-band);
+      background-origin: border-box;
+      background-clip: padding-box, border-box;
+      background-size: auto, 400px 100%;
+      /*
+        The fill layer has to repeat, not sit still: rb-slide shifts the
+        position of every layer, and a no-repeat fill would slide off the
+        left of the card and let the spectrum through into the middle of it.
+        Tiling a flat colour is seamless at any offset.
+      */
+      background-repeat: repeat, repeat-x;
+      /* Long-hand, so the header card keeps its own thicker top edge below */
+      border-color: transparent;
+      border-width: 2px;
+      /*
+        1px of border traded for 1px of padding. A gradient needs the extra
+        width to read as a rainbow rather than a smudge, and paying for it
+        out of the padding means nothing on the page moves when it switches.
+      */
+      padding: 23px;
+      animation: rb-slide 9s linear infinite;
+    }
+
+    .is-rainbow .card--header {
+      border-top-width: 10px;
+      padding-top: 22px;
+    }
+
     /* freebird .F9yp7e - form title */
     .form-title {
       font-family: var(--font-title);
@@ -97,6 +168,32 @@
       line-height: 135%;
       color: var(--text);
       margin: 0;
+    }
+
+    /*
+      Rainbow lettering: paint the spectrum behind the text and clip it to
+      the glyphs. The solid colour on each of these rules stays as the base,
+      and only browsers that can do the clipping drop it - otherwise
+      transparent text would leave the headings invisible.
+    */
+    .is-rainbow .form-title,
+    .is-rainbow .question-title,
+    .is-rainbow .option .label-text {
+      background-image: var(--rb-band);
+      background-size: 400px 100%;
+      background-repeat: repeat-x;
+      animation: rb-slide 9s linear infinite;
+    }
+
+    @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+      .is-rainbow .form-title,
+      .is-rainbow .question-title,
+      .is-rainbow .option .label-text {
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+      }
     }
 
     @media screen and (max-width: 480px) {
@@ -149,9 +246,16 @@
       margin: 0 0 16px;   /* freebird .z12JJ margin-bottom:16px */
     }
 
-    /* freebird .vnumgf - the required asterisk */
+    /*
+      freebird .vnumgf - the required asterisk. It sits inside .question-title,
+      so once the rainbow is on it inherits that rule's transparent text fill.
+      Without the explicit fill below it would clip against its own (empty)
+      background and vanish, and the asterisk has to stay red to mean anything.
+    */
     .required-star {
       color: var(--error);
+      -webkit-text-fill-color: var(--error);
+      background: none;
       padding-left: .25em;
     }
 
@@ -323,22 +427,31 @@
       transition: background .2s .1s, box-shadow .28s cubic-bezier(.4, 0, .2, 1);
     }
 
-    /* Theme .QvWxOd - filled submit button, accent-tinted elevation */
+    /*
+      Theme .QvWxOd - filled submit button, accent-tinted elevation. The
+      text-shadow is what keeps the white label readable as the yellow band
+      of the spectrum slides underneath it.
+    */
     .btn-filled {
       background-color: var(--accent);
+      background-image: var(--rb-band);
+      background-size: 400px 100%;
+      background-repeat: repeat-x;
       color: #fff;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+      animation: rb-slide 9s linear infinite;
     }
 
     .btn-filled:hover {
-      box-shadow: 0 2px 1px -1px rgba(87, 70, 227, .2),
-                  0 1px 1px 0    rgba(87, 70, 227, .14),
-                  0 1px 3px 0    rgba(87, 70, 227, .12);
+      box-shadow: 0 2px 1px -1px hsl(var(--rb-hue) 75% 58% / .2),
+                  0 1px 1px 0    hsl(var(--rb-hue) 75% 58% / .14),
+                  0 1px 3px 0    hsl(var(--rb-hue) 75% 58% / .12);
     }
 
     .btn-filled:active {
-      box-shadow: 0 3px 5px -1px rgba(87, 70, 227, .2),
-                  0 6px 10px 0   rgba(87, 70, 227, .14),
-                  0 1px 18px 0   rgba(87, 70, 227, .12);
+      box-shadow: 0 3px 5px -1px hsl(var(--rb-hue) 75% 58% / .2),
+                  0 6px 10px 0   hsl(var(--rb-hue) 75% 58% / .14),
+                  0 1px 18px 0   hsl(var(--rb-hue) 75% 58% / .12);
     }
 
     .btn-filled:disabled { opacity: .54; cursor: default; box-shadow: none; }
@@ -408,6 +521,96 @@
     body.is-submitted .form-body { display: none; }
     body.is-submitted .confirmation { display: block; }
 
+    /* ---------- Celebration ---------- */
+    /*
+      Ten strips that wipe in one after another to cover the page, hold, then
+      wipe back out from the bottom up. The dark fill lives on each strip
+      rather than on the overlay, so the page darkens row by row along with
+      the text instead of going black the instant the overlay appears.
+    */
+    .celebration {
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    /* display:flex above would otherwise beat the hidden attribute */
+    .celebration[hidden] { display: none; }
+
+    body.is-celebrating { overflow: hidden; }
+
+    .cel-row {
+      flex: 0 0 10%;
+      height: 10%;
+      position: relative;
+      overflow: hidden;
+      background-color: #0b0b0b;
+      clip-path: inset(0 100% 0 0);
+      animation: cel-wipe-in 450ms cubic-bezier(0, 0, .2, 1) both;
+    }
+
+    @keyframes cel-wipe-in {
+      from { clip-path: inset(0 100% 0 0); }
+      to   { clip-path: inset(0 0 0 0); }
+    }
+
+    /*
+      Insetting from the left on the way out means the strip retracts left to
+      right, carrying on in the direction it arrived rather than rewinding.
+      The reversed per-row delay is set on the elements from script.
+    */
+    .celebration.is-clearing .cel-row {
+      animation-name: cel-wipe-out;
+      animation-timing-function: cubic-bezier(.4, 0, 1, 1);
+    }
+
+    @keyframes cel-wipe-out {
+      from { clip-path: inset(0 0 0 0); }
+      to   { clip-path: inset(0 0 0 100%); }
+    }
+
+    /*
+      The track holds two identical copies of the phrase run, so shifting it
+      by exactly half its width puts copy two where copy one started and the
+      scroll loops with no visible seam.
+    */
+    .cel-track {
+      display: flex;
+      width: max-content;
+      white-space: nowrap;
+      will-change: transform;
+      animation: cel-scroll 9s linear infinite;
+    }
+
+    @keyframes cel-scroll {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
+    .cel-text {
+      font: 700 7.2vh/10vh var(--font-title);
+      color: #ff7a00;
+      background-image: var(--rb-band);
+      background-size: 600px 100%;
+      background-repeat: repeat-x;
+      animation: cel-rainbow 2.5s linear infinite;
+    }
+
+    @supports ((-webkit-background-clip: text) or (background-clip: text)) {
+      .cel-text {
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+      }
+    }
+
+    @keyframes cel-rainbow { to { background-position: 600px 0; } }
+
     .status {
       font-family: var(--font-label);
       font-size: 14px;
@@ -433,6 +636,22 @@
     }
 
     footer p { margin: 4px 0; }
+
+    /*
+      The rainbow stays, it just stops moving. The celebration is skipped in
+      script for these users; the rule below is only a backstop in case the
+      overlay is ever reached anyway.
+    */
+    @media (prefers-reduced-motion: reduce) {
+      :root.is-rainbow,
+      .is-rainbow .card,
+      .is-rainbow .form-title,
+      .is-rainbow .question-title,
+      .is-rainbow .option .label-text,
+      .btn-filled { animation: none; }
+
+      .celebration { display: none !important; }
+    }
   </style>
 </head>
 
@@ -664,6 +883,14 @@
     </footer>
   </main>
 
+  <!--
+    Left empty on purpose. The rows are built by script at submit time so the
+    marquee is sized against the viewport as it is then, not as it was at load.
+    aria-hidden keeps the decorative text out of the accessibility tree - the
+    announcement is still the focus move onto #confirmation.
+  -->
+  <div class="celebration" id="celebration" aria-hidden="true" hidden></div>
+
   <script>
     (function () {
       'use strict';
@@ -677,6 +904,29 @@
          See netlify/functions/submit.mjs.
          ============================================================ */
       var SUBMIT_ENDPOINT = '/api/submit';
+
+      /*
+        Where people are sent when the submit fails outright. The original
+        Google Form still accepts responses, so it is the one place a failed
+        entry can still be recorded.
+      */
+      var BACKUP_FORM_URL =
+        'https://docs.google.com/forms/d/e/1FAIpQLSfjWzzGeS0tIetUrLKh0NIZ9ySP2nZBjKO7J3mEAUrT0lGKPQ/viewform';
+
+      var FATAL_MESSAGE =
+        '送信に失敗しました。回答は保存されていません。\n\n' +
+        'A fatal error occurred and your answers were NOT recorded. ' +
+        'Press OK to open the backup form - you will need to fill it out again.';
+
+      /* ---------- Celebration timings ---------- */
+      var CELEBRATION_TEXT = '踊る阿呆に見る阿呆同じ阿呆なら踊らにゃ損々';
+      var ROW_COUNT   = 10;    // each row is 10% of the viewport height
+      var ROW_STAGGER = 150;   // ms between one row starting and the next
+      var WIPE_MS     = 450;   // how long a single row takes to wipe across
+      var HOLD_MS     = 3500;  // how long the filled screen sits there
+
+      // 10 x 150 + 450 = 1800ms to fill, hold, then the same again to clear.
+      var FILL_MS = ROW_COUNT * ROW_STAGGER + WIPE_MS;
 
       /*
         One entry per answerable question, in the order they appear on the
@@ -701,6 +951,7 @@
       var submitBtn = document.getElementById('submit-btn');
       var confirmation = document.getElementById('confirmation');
       var statusEl = document.getElementById('status');
+      var celebrationEl = document.getElementById('celebration');
 
       FIELDS.forEach(function (field) {
         field.cardEl = document.getElementById(field.card);
@@ -812,6 +1063,108 @@
         });
       }
 
+      /* ---------- Celebration ---------- */
+      function empty(node) {
+        while (node.firstChild) { node.removeChild(node.firstChild); }
+      }
+
+      /* One span's worth of text: the phrase repeated until it outruns the screen. */
+      function phraseRun() {
+        // CJK glyphs are about one em square, and .cel-text is 7.2vh.
+        var glyph = window.innerHeight * 0.072;
+        var phraseWidth = CELEBRATION_TEXT.length * glyph;
+        var copies = Math.max(2, Math.ceil((window.innerWidth * 1.5) / phraseWidth));
+        var run = '';
+        for (var i = 0; i < copies; i++) { run += CELEBRATION_TEXT; }
+        return run;
+      }
+
+      function buildCelebration() {
+        empty(celebrationEl);
+
+        var run = phraseRun();
+
+        for (var i = 0; i < ROW_COUNT; i++) {
+          var row = document.createElement('div');
+          row.className = 'cel-row';
+          row.style.animationDelay = (i * ROW_STAGGER) + 'ms';
+
+          var track = document.createElement('div');
+          track.className = 'cel-track';
+          // Slightly different speeds, and every other row the other way, so
+          // the rows drift apart instead of marching in step.
+          track.style.animationDuration = (8 + i * 0.6) + 's';
+          if (i % 2) { track.style.animationDirection = 'reverse'; }
+
+          // Two identical halves - the -50% shift in cel-scroll relies on it.
+          for (var half = 0; half < 2; half++) {
+            var span = document.createElement('span');
+            span.className = 'cel-text';
+            span.textContent = run;
+            track.appendChild(span);
+          }
+
+          row.appendChild(track);
+          celebrationEl.appendChild(row);
+        }
+      }
+
+      var celebrating = false;
+
+      /*
+        Fills the screen, holds, then clears it. `onDone` runs at the moment
+        the rows start retracting, not after, so what they uncover is the
+        confirmation card rather than a blank page.
+      */
+      function celebrate(onDone) {
+        var reduced = window.matchMedia &&
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (reduced || celebrating) {
+          onDone();
+          return;
+        }
+
+        celebrating = true;
+        buildCelebration();
+        celebrationEl.hidden = false;
+        document.body.classList.add('is-celebrating');
+
+        window.setTimeout(function () {
+          var rows = celebrationEl.querySelectorAll('.cel-row');
+          rows.forEach(function (row, i) {
+            row.style.animationDelay = ((ROW_COUNT - 1 - i) * ROW_STAGGER) + 'ms';
+          });
+          celebrationEl.classList.add('is-clearing');
+          onDone();
+        }, FILL_MS + HOLD_MS);
+
+        window.setTimeout(function () {
+          celebrationEl.hidden = true;
+          celebrationEl.classList.remove('is-clearing');
+          document.body.classList.remove('is-celebrating');
+          empty(celebrationEl);
+          celebrating = false;
+        }, FILL_MS + HOLD_MS + FILL_MS);
+      }
+
+      /* ---------- Backup form ---------- */
+      /*
+        Built with createElement/textContent rather than innerHTML - the CSP
+        in netlify.toml allows inline script only because nothing on this page
+        is ever written into the DOM as markup.
+      */
+      function appendBackupLink() {
+        var link = document.createElement('a');
+        link.href = BACKUP_FORM_URL;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = 'Open the backup form';
+
+        statusEl.appendChild(document.createTextNode(' '));
+        statusEl.appendChild(link);
+      }
+
       /* ---------- Submit ---------- */
       form.addEventListener('submit', function (event) {
         event.preventDefault();
@@ -824,12 +1177,33 @@
 
         saveResponse(buildRow())
           .then(function () {
-            document.body.classList.add('is-submitted');
-            confirmation.focus();
-            window.scrollTo(0, 0);
+            /*
+              Everything except the submit button is plain until here. The
+              form is still on screen behind the overlay while it fills, so
+              the colour arrives with the first row and is waiting on the
+              confirmation card once the rows pull back.
+            */
+            document.documentElement.classList.add('is-rainbow');
+
+            celebrate(function () {
+              document.body.classList.add('is-submitted');
+              // The overlay is still covering the page here, so let it stay
+              // put - focus()'s own scrolling would fight the scrollTo below.
+              confirmation.focus({ preventScroll: true });
+              window.scrollTo(0, 0);
+            });
           })
           .catch(function (err) {
             setStatus(err.message, true);
+
+            // The answers are gone either way, so say so plainly and hand
+            // over the form that still works. Cancel keeps them here, with
+            // everything they typed intact and the link within reach.
+            if (window.confirm(FATAL_MESSAGE)) {
+              window.location.href = BACKUP_FORM_URL;
+              return;
+            }
+            appendBackupLink();
           })
           .then(function () {
             submitBtn.disabled = false;
@@ -858,6 +1232,8 @@
 
       document.getElementById('submit-another').addEventListener('click', function () {
         document.body.classList.remove('is-submitted');
+        // A blank form is an unsubmitted one, so it goes back to plain.
+        document.documentElement.classList.remove('is-rainbow');
         resetAnswers();
         window.scrollTo(0, 0);
       });

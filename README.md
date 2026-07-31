@@ -12,6 +12,27 @@ supabase/migrations/         the schema, as SQL files applied in filename order
 test.original.html           the saved Google Form this page is copied from
 ```
 
+## What a submit does
+
+The Submit button always scrolls the spectrum. Everything else is the original
+purple until a response is actually saved, at which point `is-rainbow` goes on
+`<html>` and the card borders, headings, options and controls join it — themed
+off a single animated hue (`--rb-hue`, registered with `@property` in
+`public/index.html`). Browsers without `@property` stay on the static purple.
+"Submit another response" takes the class back off.
+
+- **Saved** (function returns 201) — the page turns rainbow, then ten
+  full-width rows wipe in from the top,
+  each scrolling 踊る阿呆に見る阿呆同じ阿呆なら踊らにゃ損々 in rainbow, hold for
+  a few seconds, then wipe back out from the bottom up onto the confirmation
+  card. Timing lives in the `ROW_*`/`HOLD_MS` constants next to the handler.
+  Skipped entirely for `prefers-reduced-motion`.
+- **Failed** (anything else, including an unreachable function) — the answers
+  are not saved, so a dialog says so and OK sends the person to the original
+  Google Form, which still accepts responses. Cancel keeps them on the page
+  with their answers and a link to that form. `BACKUP_FORM_URL` holds the
+  address. Client-side validation failures do not trigger this.
+
 ## Questions and columns
 
 `test.original.html` is the saved original. Everything below was read out of the
