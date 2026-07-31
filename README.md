@@ -43,13 +43,28 @@ answer and no column.
 ## How secrets are handled
 
 The browser never receives a Supabase key. `public/index.html` POSTs answers to
-`/api/submit`; the function reads `SUPABASE_SERVICE_ROLE_KEY` from the
-environment and performs the insert itself.
+`/api/submit`; the function reads `SUPABASE_SECRET_KEY` from the environment and
+performs the insert itself.
 
-This is why there is no build step. A bundler could inject an anon key at build
-time and keep it out of Git, but it would still be readable in the deployed
-page — every key the browser holds is public. Moving the call server-side is
-what actually keeps it secret.
+This is why there is no build step. A bundler could inject a publishable key at
+build time and keep it out of Git, but it would still be readable in the
+deployed page — every key the browser holds is public. Moving the call
+server-side is what actually keeps it secret.
+
+It has to be a **secret** key (`sb_secret_…`, from Project Settings → API Keys →
+Secret keys). Only secret keys bypass row level security, and the responses
+table has no policies, so a publishable key has every insert denied. The
+function checks the key's format on each request and logs the reason rather than
+failing with a bare 502 — the point being that an unexplained failure here tempts
+you into adding a public insert policy, which is the one change that would
+expose the responses.
+
+`/api/submit` also refuses requests whose `Origin` is not this site, so the
+endpoint is not usable straight from someone else's page. It is a low fence: a
+script that sets the header itself still gets through, and nothing rate-limits or
+deduplicates submissions. That is a deliberate trade-off for a form shared inside
+the club, and Netlify's rate limiting is the thing to add if it ever spreads
+further.
 
 ## Database setup
 
@@ -79,26 +94,33 @@ npx supabase db push
 The CLI does not support `npm i -g supabase`; use `npx`, or `scoop install
 supabase` on Windows.
 
-> The first migration **drops** `public.responses` before creating it, to clear
-> out the placeholder table an earlier version of this project used. Export
-> anything you want to keep before applying it.
+Leave the table with **no policies**. RLS then denies every request carrying a
+publishable or anon key, and the secret key used by the function bypasses RLS.
+There is no public read or write path to the database.
 
-If you already built the table by pasting SQL into the editor, tell Supabase
-that migration is accounted for so it is not run again:
-
-```bash
-npx supabase migration repair --status applied 20260801120000
-```
-
-Leave the table with **no policies**. RLS then denies every anonymous request,
-and the service_role key used by the function bypasses RLS. There is no public
-write path to the database.
+A second migration revokes the default grants Supabase gives the `anon` and
+`authenticated` roles, so the table stays unreadable even if RLS is ever
+switched off by accident. Until it is applied, RLS is the only thing standing
+in front of the responses — you can tell which state you are in by reading the
+table with the publishable key: `[]` means the grant is still there, `permission
+denied for table responses` means it has been revoked.
 
 If you followed an earlier setup that added an anon insert policy, remove it:
 
 ```sql
 drop policy if exists "anon can insert responses" on public.responses;
 ```
+
+## Reading the responses
+
+The Supabase dashboard is the only way in, so the account that owns the project
+is now the whole security boundary — put MFA on it, and on Netlify.
+
+Answers that begin with `=`, `+`, `-` or `@` are stored with a leading
+apostrophe. Excel and Sheets run such a cell as a formula, and these answers are
+free text that gets exported to CSV, so the function neutralises them on the way
+in. If you see a name starting with `'`, that is why; the apostrophe is not
+shown once the spreadsheet reads it as text.
 
 ### Changing the schema later
 
@@ -128,7 +150,7 @@ will not work — there is no function to answer `/api/submit`.
 netlify deploy --prod
 ```
 
-Set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` under **Site configuration →
+Set `SUPABASE_URL` and `SUPABASE_SECRET_KEY` under **Site configuration →
 Environment variables** first, otherwise submissions return
 "The server is not configured yet."
 

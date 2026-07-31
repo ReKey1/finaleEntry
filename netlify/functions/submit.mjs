@@ -6,11 +6,13 @@
  * so nothing secret ends up in the deployed page or in Git.
  *
  * Required environment variables:
- *   SUPABASE_URL                 https://<project-ref>.supabase.co
- *   SUPABASE_SERVICE_ROLE_KEY    Settings -> API -> service_role (secret)
+ *   SUPABASE_URL           https://<project-ref>.supabase.co
+ *   SUPABASE_SECRET_KEY    Project Settings -> API Keys -> Secret keys
  *
- * The service_role key bypasses row level security, which is why the
- * database needs no public insert policy at all - see README.md.
+ * It has to be a *secret* key (sb_secret_...). Those bypass row level
+ * security, which is why the database needs no public insert policy at all
+ * - see README.md. A publishable key (sb_publishable_...) is subject to RLS,
+ * so with no policies on the table every insert it makes is denied.
  */
 
 const TABLE = 'responses';
@@ -31,12 +33,88 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function json(status, body) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: {
+      'content-type': 'application/json',
+      // The headers block in netlify.toml does not reliably reach function
+      // responses, so this one is set here as well as there.
+      'x-content-type-options': 'nosniff',
+    },
   });
 }
 
 function str(value) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+/**
+ * Answers are read in the Supabase dashboard and exported to CSV, and a cell
+ * beginning with any of these is run as a formula by Excel and Sheets. A
+ * leading apostrophe makes the spreadsheet treat the value as plain text; it
+ * is not shown in the cell. Applied only to the free-text answers - email is
+ * already constrained by EMAIL_RE, and the rest come from closed lists.
+ */
+function neutralize(value) {
+  if (!value) return value;
+  return /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+}
+
+/**
+ * Returns a reason the key cannot be used, or null when it looks usable.
+ *
+ * Supabase issues two formats. The current one is prefixed - sb_secret_ for
+ * server use, sb_publishable_ for the browser. The legacy one is a JWT whose
+ * payload carries a `role` claim, either service_role or anon. Only the two
+ * server-side variants bypass row level security; the other two are denied by
+ * a table with no policies, and the only symptom would be a generic 502.
+ */
+function keyProblem(key) {
+  if (key.startsWith('sb_secret_')) return null;
+  if (key.startsWith('sb_publishable_')) {
+    return 'it is a publishable key (sb_publishable_...)';
+  }
+
+  if (key.startsWith('eyJ')) {
+    let role;
+    try {
+      role = JSON.parse(atob(key.split('.')[1])).role;
+    } catch {
+      return 'it looks like a JWT but could not be decoded';
+    }
+    if (role === 'service_role') return null;
+    return `it is a legacy key with role "${role}"`;
+  }
+
+  return 'it matches no key format Supabase issues';
+}
+
+/**
+ * The form is the only intended client, so a request that did not come from
+ * the page is refused. Netlify sets URL and DEPLOY_PRIME_URL itself, and the
+ * request's own origin covers `netlify dev` on localhost, so this needs no
+ * configuration to work in every environment.
+ *
+ * A same-origin JSON POST is not preflighted and carries no CORS requirement,
+ * which is why nothing is sent back to make cross-origin calls succeed.
+ */
+function isAllowedOrigin(req) {
+  const origin = req.headers.get('origin');
+  // Browsers send Origin on every POST, including same-origin ones. Its
+  // absence means the caller is not a browser running our page.
+  if (!origin) return false;
+
+  const allowed = [
+    new URL(req.url).origin,
+    process.env.URL,
+    process.env.DEPLOY_PRIME_URL,
+  ].filter(Boolean);
+
+  return allowed.some((candidate) => {
+    try {
+      return new URL(candidate).origin === origin;
+    } catch {
+      return false;
+    }
+  });
 }
 
 /** Returns an error string, or null when the payload is acceptable. */
@@ -73,11 +151,30 @@ export default async (req) => {
     return json(405, { error: 'Method not allowed.' });
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!isAllowedOrigin(req)) {
+    return json(403, { error: 'Requests are only accepted from the form.' });
+  }
 
-  if (!supabaseUrl || !serviceRoleKey) {
-    console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.');
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const secretKey = process.env.SUPABASE_SECRET_KEY;
+
+  if (!supabaseUrl || !secretKey) {
+    console.error('Missing SUPABASE_URL or SUPABASE_SECRET_KEY.');
+    return json(500, { error: 'The server is not configured yet.' });
+  }
+
+  // Fail loudly on the wrong class of key, rather than letting row level
+  // security deny the insert and surface a generic 502. That symptom invites
+  // "fixing" the database by adding a public insert policy or turning RLS off
+  // - the two changes that would actually expose the responses.
+  const badKey = keyProblem(secretKey);
+  if (badKey) {
+    console.error(
+      `SUPABASE_SECRET_KEY cannot be used: ${badKey}. Only a secret key ` +
+      'bypasses row level security; anything else has every insert denied by ' +
+      'a table with no policies. Take one from Project Settings -> API Keys ' +
+      '-> Secret keys.'
+    );
     return json(500, { error: 'The server is not configured yet.' });
   }
 
@@ -105,12 +202,18 @@ export default async (req) => {
     return json(400, { error: problem });
   }
 
+  // After validate(), so the length limits are measured against what was
+  // actually typed rather than against an added apostrophe.
+  row.full_name = neutralize(row.full_name);
+  row.line_name = neutralize(row.line_name);
+  row.content_idea = neutralize(row.content_idea);
+
   const res = await fetch(`${supabaseUrl.replace(/\/+$/, '')}/rest/v1/${TABLE}`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      apikey: serviceRoleKey,
-      authorization: `Bearer ${serviceRoleKey}`,
+      apikey: secretKey,
+      authorization: `Bearer ${secretKey}`,
       prefer: 'return=minimal',
     },
     body: JSON.stringify(row),

@@ -19,20 +19,27 @@ jobs:
   migrate:
     runs-on: ubuntu-latest
 
+    # This job only reads the checkout; it never writes back to the repository.
+    permissions:
+      contents: read
+
     env:
       # Authenticates the CLI to your Supabase account.
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       # `db push` connects straight to Postgres, so it needs the database
-      # password — not the service_role key the form function uses.
+      # password — not the secret API key the form function uses.
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_ID }}
 
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned rather than `latest`: this step runs SQL against the production
+      # database, so a new CLI release should be something you opt into by
+      # bumping this line, not something that arrives on the next push.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.111.0
 
       - name: Link to the hosted project
         run: supabase link --project-ref "$PROJECT_REF"

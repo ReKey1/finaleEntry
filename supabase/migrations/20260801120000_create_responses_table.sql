@@ -2,15 +2,13 @@
 -- named to match the `key` of each entry in the FIELDS array in
 -- public/index.html — the function sends the row as-is, so the names must agree.
 --
--- DESTRUCTIVE. The drop is here because an earlier version of this project had
--- a placeholder `responses` table with different columns, and a plain
--- `create table if not exists` would leave that stale table in place while
--- every insert failed on a missing column. Applying this migration deletes any
--- rows already collected. Once you have real responses, never edit this file —
--- add a new migration alongside it instead.
-drop table if exists public.responses;
+-- Once this has been applied, never edit it — Supabase tracks migrations by the
+-- timestamp in the filename and will skip one it has already seen, so a change
+-- here would silently never reach the database. Add a new migration instead.
 
-create table public.responses (
+-- `if not exists` because the table may already have been built by hand in the
+-- SQL editor. Without it, a push against such a project fails outright.
+create table if not exists public.responses (
   id           bigint generated always as identity primary key,
   created_at   timestamptz not null default now(),
   email        text not null,
@@ -23,7 +21,7 @@ create table public.responses (
 );
 
 -- No policies, deliberately. Row level security with zero policies denies every
--- request carrying an anon or publishable key, and the service_role key used by
--- the function bypasses RLS entirely. That leaves no public write path to this
--- table.
+-- request carrying an anon or publishable key, and the secret key used by the
+-- function bypasses RLS entirely. That leaves no public read or write path to
+-- this table.
 alter table public.responses enable row level security;
