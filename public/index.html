@@ -70,6 +70,15 @@
       --rb-band: linear-gradient(90deg,
         #ff004d, #ff7a00, #ffe600, #39d353, #00c2ff, #5746e3, #c14bff, #ff004d);
 
+      /*
+        The same spectrum pulled down to roughly even darkness, for the
+        celebration text. The bright band is meant to be read against the
+        white card border or a filled button - as letterforms on white the
+        yellow end of it all but disappears.
+      */
+      --rb-band-deep: linear-gradient(90deg,
+        #e00040, #c25a00, #9c8000, #1f9e40, #0089b8, #4636cc, #9b2fd4, #e00040);
+
       /* theme .D8bnZd, the class on the original <body> */
       --page-bg:      rgb(238, 237, 252);
       --card-bg:      #fff;
@@ -523,10 +532,10 @@
 
     /* ---------- Celebration ---------- */
     /*
-      Ten strips that wipe in one after another to cover the page, hold, then
-      wipe back out from the bottom up. The dark fill lives on each strip
-      rather than on the overlay, so the page darkens row by row along with
-      the text instead of going black the instant the overlay appears.
+      Ten panes of frosted glass that wipe in one after another to cover the
+      page, hold, then wipe back out from the bottom up. The glass lives on
+      each pane rather than on the overlay, so the form behind goes soft one
+      strip at a time instead of all at once when the overlay appears.
     */
     .celebration {
       position: fixed;
@@ -548,9 +557,46 @@
       height: 10%;
       position: relative;
       overflow: hidden;
-      background-color: #0b0b0b;
+      /*
+        Tint plus blur is the whole trick: the tint alone would be a flat
+        wash, the blur alone would leave the form behind readable. saturate
+        keeps the colour that survives the blur from going grey. The insets
+        catch a highlight on the top edge of each pane and drop a hairline on
+        the bottom, which is what separates ten sheets of glass from one.
+      */
+      background-color: rgba(255, 255, 255, .58);
+      -webkit-backdrop-filter: blur(12px) saturate(180%);
+      backdrop-filter: blur(12px) saturate(180%);
+      box-shadow: inset 0  1px 0 rgba(255, 255, 255, .7),
+                  inset 0 -1px 0 rgba(15, 17, 40, .07);
       clip-path: inset(0 100% 0 0);
       animation: cel-wipe-in 450ms cubic-bezier(0, 0, .2, 1) both;
+    }
+
+    /* Nothing frosts the page without it, so lean on the tint instead. */
+    @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+      .cel-row { background-color: rgba(255, 255, 255, .93); }
+    }
+
+    /*
+      The sandblasted part: static fractal noise laid over the pane. It sits
+      above the lettering on purpose, so the glass reads as etched rather than
+      as clean text under a sheet. Desaturated inside the SVG and composited
+      normally - mix-blend-mode here would be the sharper-looking option, but
+      a blended child is known to make some Chrome versions drop the parent's
+      backdrop-filter entirely, and losing the blur costs more than it gains.
+
+      Inline SVG as a data: URI: the CSP allows data: images, and a separate
+      file would be another request for 2 KB that never changes.
+    */
+    .cel-row::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: .25;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 180px 180px;
     }
 
     @keyframes cel-wipe-in {
@@ -593,8 +639,8 @@
 
     .cel-text {
       font: 700 7.2vh/10vh var(--font-title);
-      color: #ff7a00;
-      background-image: var(--rb-band);
+      color: #c25a00;
+      background-image: var(--rb-band-deep);
       background-size: 600px 100%;
       background-repeat: repeat-x;
       animation: cel-rainbow 2.5s linear infinite;
@@ -1091,10 +1137,15 @@
 
           var track = document.createElement('div');
           track.className = 'cel-track';
-          // Slightly different speeds, and every other row the other way, so
-          // the rows drift apart instead of marching in step.
+          /*
+            Every row travels the same way. What keeps it from reading as one
+            block of text is the negative delay: it starts each row part-way
+            into the loop, so the phrase boundaries land in a different place
+            on every line. The varied duration then pulls them further apart
+            as it plays.
+          */
           track.style.animationDuration = (8 + i * 0.6) + 's';
-          if (i % 2) { track.style.animationDirection = 'reverse'; }
+          track.style.animationDelay = '-' + (i * 1.1) + 's';
 
           // Two identical halves - the -50% shift in cel-scroll relies on it.
           for (var half = 0; half < 2; half++) {

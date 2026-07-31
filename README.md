@@ -22,7 +22,7 @@ off a single animated hue (`--rb-hue`, registered with `@property` in
 "Submit another response" takes the class back off.
 
 - **Saved** (function returns 201) — the page turns rainbow, then ten
-  full-width rows wipe in from the top,
+  full-width panes of sandblasted glass wipe in from the top,
   each scrolling 踊る阿呆に見る阿呆同じ阿呆なら踊らにゃ損々 in rainbow, hold for
   a few seconds, then wipe back out from the bottom up onto the confirmation
   card. Timing lives in the `ROW_*`/`HOLD_MS` constants next to the handler.
