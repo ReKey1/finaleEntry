@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="strict-origin-when-cross-origin">
-  <title>Scores</title>
+  <title>23引退公演finaleエントリーフォーム</title>
 
   <link rel="shortcut icon" sizes="16x16"
         href="https://www.gstatic.com/images/branding/productlogos/forms_2026/v2/web-16dp/logo_forms_2026_color_1x_web_16dp.png">
@@ -15,7 +15,7 @@
       Google Sans  - form title and buttons
       Roboto       - question titles, options, body text
       Product Sans - Google wordmark
-      Material Icons Extended - icon glyphs (error, etc.)
+      Material Icons Extended - icon glyphs (error, dropdown arrow)
     Google Sans and Product Sans are license-restricted but the stylesheets
     are served publicly, so they render as long as the page is online.
   -->
@@ -40,7 +40,8 @@
       --accent-selected:   rgb(238, 237, 252);
       --accent-ripple:     rgb(221, 218, 249);
 
-      --page-bg:      #f0ebf8;
+      /* theme .D8bnZd, the class on the original <body> */
+      --page-bg:      rgb(238, 237, 252);
       --card-bg:      #fff;
       --card-border:  #dadada;
       --text:         #1f1f1f;
@@ -56,7 +57,7 @@
 
     * { box-sizing: border-box; }
 
-    /* freebird: body{background-color:#f0ebf8;font-family:Roboto,...} */
+    /* freebird: body{background-color:...;font-family:Roboto,...} */
     body {
       background-color: var(--page-bg);
       font-family: var(--font-body);
@@ -102,28 +103,28 @@
       .form-title { font-size: 24px; }
     }
 
+    /*
+      freebird .cBGGJ with theme .OIC90c - the form description, 11pt over
+      15pt leading. The markup inside is copied from the original, so the
+      line breaks come from its own <div>s. dir="auto" on the element lets
+      the Arabic line lay itself out right-to-left, as it does in Forms.
+    */
+    .form-description {
+      font-family: var(--font-label);
+      font-size: 14.6667px;
+      line-height: 20px;
+      color: var(--text);
+      margin-top: 12px;
+    }
+
     /* freebird .gTo7v .snByac - 14px Roboto label text */
-    .label-text,
-    .account,
-    .receipt-note {
+    .label-text {
       font-family: var(--font-label);
       font-size: 14px;
       font-weight: 400;
       letter-spacing: .2px;
       line-height: 20px;
       color: var(--text);
-    }
-
-    .account {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 8px 16px;
-      margin-top: 16px;
-      padding-top: 12px;
-      border-top: 1px solid var(--card-border);
-      color: var(--text-muted);
     }
 
     /* freebird .md0UAd - required-question note */
@@ -152,6 +153,23 @@
     .required-star {
       color: var(--error);
       padding-left: .25em;
+    }
+
+    /* ---------- Video item ---------- */
+    /*
+      freebird .Zk61hd sizes the embed; the original is 320x180 and keeps
+      that width, so the frame only shrinks once the card is narrower.
+    */
+    .video-frame {
+      width: 320px;
+      max-width: 100%;
+    }
+
+    .video-frame iframe {
+      display: block;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      border: 0;
     }
 
     /* ---------- Options (radio / checkbox) ---------- */
@@ -224,8 +242,6 @@
       transform: rotate(45deg);
     }
 
-    .email-value { font-weight: 500; word-break: break-all; }
-
     /* ---------- Short answer text field ---------- */
     /*
       freebird .whsOnd is the bare input; .Yp9mw is the underline that
@@ -274,8 +290,70 @@
       opacity: 1;
     }
 
-    .card.has-error .text-field { border-bottom-color: var(--error); }
-    .card.has-error .text-field::after { background-color: var(--error); }
+    /* ---------- Dropdown ---------- */
+    /*
+      Forms builds its dropdown out of a role="listbox" widget. Same
+      approach as the radios above: keep the native <select> so the
+      platform picker, keyboard and screen readers keep working, and
+      borrow the underline from .Yp9mw plus the arrow_drop_down glyph.
+    */
+    .select-field {
+      position: relative;
+      max-width: min(100%, 336px);
+      border-bottom: 1px solid rgba(0, 0, 0, .12);
+      transition: border-color .2s cubic-bezier(.4, 0, .2, 1);
+      padding-bottom: 8px;
+    }
+
+    .select-field:focus-within { border-bottom-color: var(--accent); }
+
+    .select-field::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      background-color: var(--accent);
+      transform: scaleX(0);
+      transition: transform .2s cubic-bezier(.4, 0, .2, 1);
+    }
+
+    .select-field:focus-within::before { transform: scaleX(1); }
+
+    .select-field::after {
+      content: "arrow_drop_down";
+      font-family: "Material Icons Extended";
+      font-size: 24px;
+      line-height: 24px;
+      color: var(--text-grey);
+      position: absolute;
+      top: 0;
+      right: 0;
+      pointer-events: none;
+    }
+
+    .select-field select {
+      display: block;
+      width: 100%;
+      background-color: transparent;
+      appearance: none;
+      -webkit-appearance: none;
+      border: none;
+      outline: none;
+      margin: 0;
+      padding: 0 32px 0 0;
+      height: 24px;
+      line-height: 24px;
+      font: 400 16px var(--font-body);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .card.has-error .text-field,
+    .card.has-error .select-field { border-bottom-color: var(--error); }
+    .card.has-error .text-field::after,
+    .card.has-error .select-field::before { background-color: var(--error); }
 
     /* ---------- Buttons ---------- */
     /* freebird .UQuaGc - Google Sans 14px/500, 4px radius (not a pill) */
@@ -383,8 +461,6 @@
 
     .error-msg.is-visible { display: flex; }
 
-    .receipt-note { color: var(--text-muted); margin: 0 0 16px; }
-
     /* ---------- Confirmation ---------- */
     .confirmation { display: none; }
     .confirmation p { margin: 16px 0; }
@@ -425,33 +501,52 @@
 
     <!-- ==================== Form ==================== -->
     <div class="form-body">
-      <form id="scores-form" novalidate>
+      <form id="entry-form" novalidate>
 
         <!-- ---------- Header ---------- -->
         <section class="card card--header">
-          <h1 class="form-title">Scores</h1>
+          <h1 class="form-title">23引退公演finaleエントリーフォーム</h1>
 
-          <div class="account">
-            <span id="account-email">rikikowalczyk@gmail.com</span>
-            <button type="button" class="btn-link" id="switch-account">Switch account</button>
-          </div>
+          <!-- Description markup copied from the original page -->
+          <div class="form-description" dir="auto"><div>ようこそ、23の世界へ&nbsp;</div>welcome to 23 world<div><span>23의 세계에 오신 것을 환영합니다</span><div>&nbsp; مرحبًا بكم في عالم23&nbsp;</div><div><span>欢迎来到23的世界</span></div><div><span>23 की दुनिया में आपका स्वागत है&nbsp;&nbsp;</span></div><div>&nbsp;&nbsp;</div></div></div>
 
           <p class="required-note">* Indicates required question</p>
         </section>
 
+        <!-- ---------- Video ---------- -->
+        <section class="card">
+          <h2 class="question-title">M9 フィナーレ</h2>
+
+          <!--
+            The original src also carries enablejsapi, origin=docs.google.com,
+            an embed_config blob and a per-session rct token. Those are Forms'
+            own player plumbing and are not reusable, so only the video id and
+            rel=0 are kept.
+          -->
+          <div class="video-frame">
+            <iframe src="https://www.youtube.com/embed/QhTF_ZH1AMY?rel=0&amp;vl=1"
+                    title="welcome to the 23 world" width="320" height="180"
+                    frameborder="0" allowfullscreen
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe>
+          </div>
+        </section>
+
         <!-- ---------- Email ---------- -->
+        <!--
+          Not part of the original form. Forms collects the address from the
+          signed-in Google account, which only works inside Forms, so the
+          rebuild asks for it outright.
+        -->
         <section class="card" id="email-card">
-          <h2 class="question-title">
+          <h2 class="question-title" id="email-label">
             Email<span class="required-star" aria-hidden="true">*</span>
           </h2>
 
-          <label class="option">
-            <input type="checkbox" id="email-consent" checked>
-            <span class="label-text">
-              Record <span class="email-value">rikikowalczyk@gmail.com</span>
-              as the email to be included with my response
-            </span>
-          </label>
+          <div class="text-field">
+            <input type="email" id="email-input" name="email"
+                   placeholder="Your answer" autocomplete="email"
+                   aria-labelledby="email-label" aria-required="true">
+          </div>
 
           <p class="error-msg" id="email-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
@@ -459,14 +554,14 @@
           </p>
         </section>
 
-        <!-- ---------- Short answer (text field) ---------- -->
+        <!-- ---------- おなまえ【フルネーム】 ---------- -->
         <section class="card" id="name-card">
           <h2 class="question-title" id="name-label">
-            Name<span class="required-star" aria-hidden="true">*</span>
+            おなまえ【フルネーム】<span class="required-star" aria-hidden="true">*</span>
           </h2>
 
           <div class="text-field">
-            <input type="text" id="name-input" name="name"
+            <input type="text" id="name-input" name="full_name"
                    placeholder="Your answer" autocomplete="name"
                    aria-labelledby="name-label" aria-required="true">
           </div>
@@ -477,28 +572,126 @@
           </p>
         </section>
 
-        <!-- ---------- Multiple choice ---------- -->
-        <section class="card" id="q1-card">
-          <h2 class="question-title" id="q1-label">Untitled Question</h2>
+        <!-- ---------- Line名 ---------- -->
+        <section class="card" id="line-card">
+          <h2 class="question-title" id="line-label">
+            Line名<span class="required-star" aria-hidden="true">*</span>
+          </h2>
 
-          <div role="radiogroup" aria-labelledby="q1-label">
+          <div class="text-field">
+            <input type="text" id="line-input" name="line_name"
+                   placeholder="Your answer"
+                   aria-labelledby="line-label" aria-required="true">
+          </div>
+
+          <p class="error-msg" id="line-error" role="alert">
+            <i class="material-icons-extended" aria-hidden="true">error</i>
+            <span>This is a required question</span>
+          </p>
+        </section>
+
+        <!-- ---------- finaleTシャツのサイズ ---------- -->
+        <section class="card" id="size-card">
+          <h2 class="question-title" id="size-label">
+            finaleTシャツのサイズ<span class="required-star" aria-hidden="true">*</span>
+          </h2>
+
+          <div class="select-field">
+            <select id="size-select" name="tshirt_size"
+                    aria-labelledby="size-label" aria-required="true">
+              <option value="">Choose</option>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="XXL">XXL</option>
+            </select>
+          </div>
+
+          <p class="error-msg" id="size-error" role="alert">
+            <i class="material-icons-extended" aria-hidden="true">error</i>
+            <span>This is a required question</span>
+          </p>
+        </section>
+
+        <!-- ---------- W+I&S での学年 ---------- -->
+        <section class="card" id="grade-card">
+          <h2 class="question-title" id="grade-label">
+            W+I&amp;Sでの学年<span class="required-star" aria-hidden="true">*</span>
+          </h2>
+
+          <div role="radiogroup" aria-labelledby="grade-label" aria-required="true">
             <label class="option">
-              <input type="radio" name="choice" value="Option 1">
-              <span class="label-text">Option 1</span>
+              <input type="radio" name="grade" value="22">
+              <span class="label-text">22</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="grade" value="23">
+              <span class="label-text">23</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="grade" value="24">
+              <span class="label-text">24</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="grade" value="25">
+              <span class="label-text">25</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="grade" value="26">
+              <span class="label-text">26</span>
             </label>
           </div>
 
-          <button type="button" class="btn btn-text" data-clear-group="choice">
-            Clear selection
-          </button>
+          <p class="error-msg" id="grade-error" role="alert">
+            <i class="material-icons-extended" aria-hidden="true">error</i>
+            <span>This is a required question</span>
+          </p>
+        </section>
+
+        <!-- ---------- finaleでパートを増やしたくない ---------- -->
+        <!--
+          No "Clear selection" button here or on the question above: Forms
+          drops it once a choice question is required, and both are.
+        -->
+        <section class="card" id="parts-card">
+          <h2 class="question-title" id="parts-label">
+            finaleでパートを増やしたくない<span class="required-star" aria-hidden="true">*</span>
+          </h2>
+
+          <div role="radiogroup" aria-labelledby="parts-label" aria-required="true">
+            <label class="option">
+              <input type="radio" name="parts" value="かまわない！">
+              <span class="label-text">かまわない！</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="parts" value="はい">
+              <span class="label-text">はい</span>
+            </label>
+          </div>
+
+          <p class="error-msg" id="parts-error" role="alert">
+            <i class="material-icons-extended" aria-hidden="true">error</i>
+            <span>This is a required question</span>
+          </p>
+        </section>
+
+        <!-- ---------- finaleコマでやりたいコンテンツ (optional) ---------- -->
+        <section class="card" id="content-card">
+          <h2 class="question-title" id="content-label">finaleコマでやりたいコンテンツ</h2>
+
+          <div class="text-field">
+            <input type="text" id="content-input" name="content_idea"
+                   placeholder="Your answer" aria-labelledby="content-label">
+          </div>
+
+          <p class="error-msg" id="content-error" role="alert">
+            <i class="material-icons-extended" aria-hidden="true">error</i>
+            <span>This is a required question</span>
+          </p>
         </section>
 
         <!-- ---------- Actions ---------- -->
-        <p class="receipt-note">
-          A copy of your response will be emailed to
-          <span class="email-value">rikikowalczyk@gmail.com</span>.
-        </p>
-
         <p class="status" id="status" hidden role="status"></p>
 
         <div class="actions">
@@ -510,7 +703,7 @@
 
     <!-- ==================== Confirmation ==================== -->
     <section class="card confirmation" id="confirmation" tabindex="-1">
-      <h1 class="form-title">Scores</h1>
+      <h1 class="form-title">23引退公演finaleエントリーフォーム</h1>
       <p class="label-text">Your response has been recorded.</p>
       <p><button type="button" class="btn-link" id="submit-another">Submit another response</button></p>
     </section>
@@ -518,7 +711,7 @@
     <footer>
       <p>This content is neither created nor endorsed by Google.</p>
       <p>
-        <a href="https://docs.google.com/forms/d/e/1FAIpQLScjR2HiWF2Mz0JhyLrqmg8VEk9SOGAtpI1msE9YjdXUdFitgA/viewform">
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSfjWzzGeS0tIetUrLKh0NIZ9ySP2nZBjKO7J3mEAUrT0lGKPQ/viewform">
           Open the original form
         </a>
       </p>
@@ -539,26 +732,66 @@
          ============================================================ */
       var SUBMIT_ENDPOINT = '/api/submit';
 
-      var form = document.getElementById('scores-form');
-      var emailConsent = document.getElementById('email-consent');
-      var emailCard = document.getElementById('email-card');
-      var emailError = document.getElementById('email-error');
-      var nameInput = document.getElementById('name-input');
-      var nameCard = document.getElementById('name-card');
-      var nameError = document.getElementById('name-error');
+      /*
+        One entry per answerable question, in the order they appear on the
+        page. `key` is the column the answer lands in - keep it in step with
+        the row the function builds and with the table in README.md.
+      */
+      var FIELDS = [
+        { key: 'email',        card: 'email-card',   err: 'email-error',   input: 'email-input',   required: true, email: true },
+        { key: 'full_name',    card: 'name-card',    err: 'name-error',    input: 'name-input',    required: true },
+        { key: 'line_name',    card: 'line-card',    err: 'line-error',    input: 'line-input',    required: true },
+        { key: 'tshirt_size',  card: 'size-card',    err: 'size-error',    input: 'size-select',   required: true },
+        { key: 'grade',        card: 'grade-card',   err: 'grade-error',   group: 'grade',         required: true },
+        { key: 'extra_parts',  card: 'parts-card',   err: 'parts-error',   group: 'parts',         required: true },
+        { key: 'content_idea', card: 'content-card', err: 'content-error', input: 'content-input', required: false }
+      ];
+
+      // Same expression the function uses, so the two agree on what an
+      // address looks like.
+      var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      var form = document.getElementById('entry-form');
       var submitBtn = document.getElementById('submit-btn');
       var confirmation = document.getElementById('confirmation');
       var statusEl = document.getElementById('status');
 
-      var email = 'rikikowalczyk@gmail.com';
+      FIELDS.forEach(function (field) {
+        field.cardEl = document.getElementById(field.card);
+        field.errEl = document.getElementById(field.err);
+        field.errTextEl = field.errEl.querySelector('span');
+        field.inputEl = field.input ? document.getElementById(field.input) : null;
+      });
 
-      function radios() {
-        return form.querySelectorAll('input[type="radio"]');
+      function radiosOf(field) {
+        return form.querySelectorAll('input[type="radio"][name="' + field.group + '"]');
       }
 
-      function setError(card, msgEl, show) {
-        card.classList.toggle('has-error', show);
-        msgEl.classList.toggle('is-visible', show);
+      function valueOf(field) {
+        if (field.group) {
+          var checked = form.querySelector(
+            'input[type="radio"][name="' + field.group + '"]:checked');
+          return checked ? checked.value : '';
+        }
+        return field.inputEl.value.trim();
+      }
+
+      /** Returns the message to show under the question, or null when it is fine. */
+      function problemWith(field) {
+        var value = valueOf(field);
+        if (!value) {
+          return field.required ? 'This is a required question' : null;
+        }
+        if (field.email && !EMAIL_RE.test(value)) {
+          return 'Please enter a valid email address';
+        }
+        return null;
+      }
+
+      function setError(field, message) {
+        field.cardEl.classList.toggle('has-error', !!message);
+        field.errEl.classList.toggle('is-visible', !!message);
+        if (message) { field.errTextEl.textContent = message; }
       }
 
       function setStatus(text, isError) {
@@ -571,47 +804,46 @@
         statusEl.hidden = false;
       }
 
-      /* ---------- "Clear selection" for any radio group ---------- */
-      document.querySelectorAll('[data-clear-group]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          var name = btn.getAttribute('data-clear-group');
-          form.querySelectorAll('input[type="radio"][name="' + name + '"]')
-            .forEach(function (radio) { radio.checked = false; });
-        });
-      });
-
       /* ---------- Clear each error as the field is corrected ---------- */
-      emailConsent.addEventListener('change', function () {
-        if (emailConsent.checked) { setError(emailCard, emailError, false); }
-      });
+      FIELDS.forEach(function (field) {
+        function recheck() {
+          if (!problemWith(field)) { setError(field, null); }
+        }
 
-      nameInput.addEventListener('input', function () {
-        if (nameInput.value.trim()) { setError(nameCard, nameError, false); }
+        if (field.group) {
+          radiosOf(field).forEach(function (radio) {
+            radio.addEventListener('change', recheck);
+          });
+        } else if (field.inputEl.tagName === 'SELECT') {
+          field.inputEl.addEventListener('change', recheck);
+        } else {
+          field.inputEl.addEventListener('input', recheck);
+        }
       });
 
       /* ---------- Validation ---------- */
       function validate() {
-        var emailOk = emailConsent.checked;
-        var nameOk = nameInput.value.trim() !== '';
+        var firstBad = null;
 
-        setError(emailCard, emailError, !emailOk);
-        setError(nameCard, nameError, !nameOk);
+        FIELDS.forEach(function (field) {
+          var message = problemWith(field);
+          setError(field, message);
+          if (message && !firstBad) { firstBad = field.cardEl; }
+        });
 
-        var firstBad = !emailOk ? emailCard : (!nameOk ? nameCard : null);
         if (firstBad) {
           firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        return emailOk && nameOk;
+        return !firstBad;
       }
 
       /* ---------- Collect the answers into one row ---------- */
       function buildRow() {
-        var checked = form.querySelector('input[type="radio"]:checked');
-        return {
-          email: emailConsent.checked ? email : null,
-          name: nameInput.value.trim(),
-          choice: checked ? checked.value : null
-        };
+        var row = {};
+        FIELDS.forEach(function (field) {
+          row[field.key] = valueOf(field) || null;
+        });
+        return row;
       }
 
       /* ---------- Hand the answers to the serverless function ---------- */
@@ -663,11 +895,14 @@
 
       /* ---------- Reset helpers ---------- */
       function resetAnswers() {
-        radios().forEach(function (radio) { radio.checked = false; });
-        nameInput.value = '';
-        emailConsent.checked = true;
-        setError(emailCard, emailError, false);
-        setError(nameCard, nameError, false);
+        FIELDS.forEach(function (field) {
+          if (field.group) {
+            radiosOf(field).forEach(function (radio) { radio.checked = false; });
+          } else {
+            field.inputEl.value = '';
+          }
+          setError(field, null);
+        });
         setStatus('');
       }
 
@@ -681,19 +916,6 @@
         document.body.classList.remove('is-submitted');
         resetAnswers();
         window.scrollTo(0, 0);
-      });
-
-      /* ---------- Switch account ---------- */
-      document.getElementById('switch-account').addEventListener('click', function () {
-        var next = window.prompt('Email address to submit with:', email);
-        if (next === null) { return; }
-        next = next.trim();
-        if (!next) { return; }
-        email = next;
-        document.getElementById('account-email').textContent = next;
-        document.querySelectorAll('.email-value').forEach(function (el) {
-          el.textContent = next;
-        });
       });
     })();
   </script>

@@ -15,11 +15,18 @@
 
 const TABLE = 'responses';
 
-// Keep in step with the options offered in public/index.html.
-const ALLOWED_CHOICES = new Set(['Option 1']);
+// Keep in step with the options offered in public/index.html. The function
+// rejects anything else, so a renamed option has to be changed in both files.
+const ALLOWED_SIZES = new Set(['S', 'M', 'L', 'XL', 'XXL']);
+const ALLOWED_GRADES = new Set(['22', '23', '24', '25', '26']);
+const ALLOWED_PARTS = new Set(['かまわない！', 'はい']);
 
 const MAX_NAME_LENGTH = 200;
 const MAX_EMAIL_LENGTH = 320;
+const MAX_TEXT_LENGTH = 1000;
+
+// Same expression the page uses, so the two agree on what an address is.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function json(status, body) {
   return new Response(JSON.stringify(body), {
@@ -28,18 +35,34 @@ function json(status, body) {
   });
 }
 
+function str(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
 /** Returns an error string, or null when the payload is acceptable. */
-function validate({ name, email, choice }) {
-  if (!name) return 'Name is required.';
-  if (name.length > MAX_NAME_LENGTH) return 'That name is too long.';
+function validate(row) {
+  if (!row.email) return 'Email is required.';
+  if (row.email.length > MAX_EMAIL_LENGTH) return 'That email address is too long.';
+  if (!EMAIL_RE.test(row.email)) return 'That email address looks wrong.';
 
-  if (email !== null) {
-    if (email.length > MAX_EMAIL_LENGTH) return 'That email address is too long.';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'That email address looks wrong.';
-  }
+  if (!row.full_name) return 'Name is required.';
+  if (row.full_name.length > MAX_NAME_LENGTH) return 'That name is too long.';
 
-  if (choice !== null && !ALLOWED_CHOICES.has(choice)) {
-    return 'Unrecognised option.';
+  if (!row.line_name) return 'Line name is required.';
+  if (row.line_name.length > MAX_NAME_LENGTH) return 'That Line name is too long.';
+
+  if (!row.tshirt_size) return 'T-shirt size is required.';
+  if (!ALLOWED_SIZES.has(row.tshirt_size)) return 'Unrecognised option.';
+
+  if (!row.grade) return 'Year is required.';
+  if (!ALLOWED_GRADES.has(row.grade)) return 'Unrecognised option.';
+
+  if (!row.extra_parts) return 'This is a required question.';
+  if (!ALLOWED_PARTS.has(row.extra_parts)) return 'Unrecognised option.';
+
+  // The only optional question on the form.
+  if (row.content_idea !== null && row.content_idea.length > MAX_TEXT_LENGTH) {
+    return 'That answer is too long.';
   }
 
   return null;
@@ -68,11 +91,13 @@ export default async (req) => {
   // Never trust the client: re-derive every field rather than forwarding
   // the request body, so extra keys cannot reach the table.
   const row = {
-    name: typeof payload.name === 'string' ? payload.name.trim() : '',
-    email: typeof payload.email === 'string' && payload.email.trim()
-      ? payload.email.trim()
-      : null,
-    choice: typeof payload.choice === 'string' ? payload.choice : null,
+    email: str(payload.email),
+    full_name: str(payload.full_name),
+    line_name: str(payload.line_name),
+    tshirt_size: str(payload.tshirt_size),
+    grade: str(payload.grade),
+    extra_parts: str(payload.extra_parts),
+    content_idea: str(payload.content_idea) || null,
   };
 
   const problem = validate(row);

@@ -1,0 +1,18 @@
+# Supabase CLI configuration.
+#
+# Only the settings that matter here are listed. `supabase init` writes a far
+# longer file, but nearly every section it adds configures the local Docker
+# stack (`supabase start`), which this project does not use — the form talks to
+# the hosted project over HTTPS.
+#
+# Docs: https://supabase.com/docs/guides/local-development/cli/config
+
+# A label for this project on your own machine. This is not the project ref,
+# and the hosted database never reads it.
+project_id = "finaleEntry"
+
+[db]
+# Should match the Postgres version of the hosted project, or a local
+# `supabase start` will not reproduce production. Check yours under
+# Project Settings -> Infrastructure.
+major_version = 17
