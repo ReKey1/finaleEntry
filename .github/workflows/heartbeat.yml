@@ -1,0 +1,68 @@
+# Keeps the Supabase project from being paused for inactivity.
+#
+# Free-plan projects are paused after a week without "sufficient user database
+# activity" — roughly a few requests a day. An entry form does not generate
+# that: it gets a burst of submissions when it is announced and then goes quiet,
+# which is exactly the shape that triggers a pause. Resuming is manual, from the
+# dashboard, so until someone notices the warning email every submission fails
+# over to the Google Form.
+#
+# So this reads one row a day. It is not a health check for the form — that path
+# runs through Netlify and is not exercised here — only proof of life for the
+# database.
+
+name: Supabase heartbeat
+
+on:
+  schedule:
+    # Daily. The minute is deliberately not :00 — scheduled workflows queue
+    # behind everyone else's on the hour and can be dropped under load.
+    - cron: '17 6 * * *'
+  # GitHub disables scheduled workflows in a repository with no commits for 60
+  # days, and emails the owner when it does. This form will go quiet long before
+  # then, so assume it will happen: re-enable the workflow from the Actions tab,
+  # and use this button to confirm it works without pushing anything.
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    # Nothing is checked out; the job only makes an outbound request.
+    permissions: {}
+
+    steps:
+      - name: Read one row
+        env:
+          # The project URL is https://<ref>.supabase.co, so the ref that
+          # migrations.yml already uses is enough — no second secret for it.
+          PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_ID }}
+          # The same key netlify/functions/submit.mjs uses. It has to be the
+          # secret key: responses has no policies and its anon grants are
+          # revoked, so a publishable key is denied before Postgres runs
+          # anything, and a denied request is not activity.
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+
+          # select=id&limit=1 returns a single integer even once the table has
+          # thousands of rows, and never any answers — nothing sensitive reaches
+          # the workflow log.
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            --retry 3 --retry-delay 5 --retry-all-errors --max-time 30 \
+            -H "apikey: $SUPABASE_SECRET_KEY" \
+            -H "authorization: Bearer $SUPABASE_SECRET_KEY" \
+            "https://$PROJECT_REF.supabase.co/rest/v1/responses?select=id&limit=1")
+
+          # 200 is the only answer that proves Postgres served the query. 401
+          # means the key is wrong or was rotated, 404 that the table is gone,
+          # 503 that the project is already paused — all of which are worth an
+          # emailed failure rather than a green tick that keeps nothing alive.
+          if [ "$code" != "200" ]; then
+            echo "Heartbeat failed: HTTP $code" >&2
+            echo "401/403 - check the SUPABASE_SECRET_KEY secret" >&2
+            echo "503      - the project is already paused; resume it from the dashboard" >&2
+            exit 1
+          fi
+
+          echo "Database reachable (HTTP 200)."

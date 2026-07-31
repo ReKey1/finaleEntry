@@ -8,7 +8,7 @@ netlify/functions/submit.mjs the only code that talks to Supabase
 netlify.toml                 publish dir, /api/submit route, security headers
 .env.example                 the environment variables you need to set
 supabase/migrations/         the schema, as SQL files applied in filename order
-.github/workflows/           applies those migrations on push to main
+.github/workflows/           applies those migrations, and keeps the project awake
 test.original.html           the saved Google Form this page is copied from
 ```
 
@@ -98,14 +98,15 @@ The schema lives in `supabase/migrations/`, not in the dashboard.
 Supabase's own GitHub integration does the same job from the dashboard, but it
 is built on Branching, which needs a paid plan — hence the Action.
 
-It reads three repository secrets, set under **Settings → Secrets and variables
-→ Actions**:
+Together with the heartbeat below, the workflows read four repository secrets,
+set under **Settings → Secrets and variables → Actions**:
 
 | Secret | Where to find it |
 |---|---|
 | `SUPABASE_ACCESS_TOKEN` | Account settings → Access Tokens → Generate new token |
 | `SUPABASE_DB_PASSWORD` | the database password chosen when the project was created |
 | `SUPABASE_PROJECT_ID` | the project ref — the subdomain in your project URL |
+| `SUPABASE_SECRET_KEY` | the same value Netlify holds — heartbeat only |
 
 To apply migrations by hand instead:
 
@@ -155,6 +156,27 @@ npx supabase migration new add_some_column
 ```
 
 Write the `alter table` into the file it creates, then push.
+
+## Staying on the free plan
+
+Nothing here comes close to the storage, egress or request caps — a few hundred
+rows of short text against a 500 MB database, and the page itself is served by
+Netlify, so Supabase moves almost no bytes. Two things do matter.
+
+**The project is paused after a week of inactivity.** Resuming is manual, from
+the dashboard, and a paused project answers every submission with a failure —
+which the page handles by sending people to the Google Form, but the rebuild is
+dead until someone acts on the warning email. `.github/workflows/heartbeat.yml`
+reads one row a day to stop that happening. It fails loudly, so a broken
+heartbeat arrives as a failed-workflow email rather than as silence.
+
+The heartbeat depends on the repository looking alive: GitHub disables scheduled
+workflows in a repository with no commits for 60 days. It emails you when it
+does, and the workflow can be re-enabled from the Actions tab.
+
+**There are no backups.** The free plan takes none, so the responses exist in
+exactly one place, behind one account. Export the table to CSV from the
+dashboard now and then — the same export you would do at the end anyway.
 
 ## Local development
 
