@@ -966,10 +966,27 @@
 
       /* ---------- Celebration timings ---------- */
       var CELEBRATION_TEXT = '踊る阿呆に見る阿呆同じ阿呆なら踊らにゃ損々';
+
+      /*
+        The six welcomes from the form description, in the order they appear
+        there. Every other row carries the lot, rotated to start on a
+        different one, so all six show up and no two rows read alike.
+      */
+      var WELCOMES = [
+        'ようこそ、23の世界へ',
+        'welcome to 23 world',
+        '23의 세계에 오신 것을 환영합니다',
+        'مرحبًا بكم في عالم23',
+        '欢迎来到23的世界',
+        '23 की दुनिया में आपका स्वागत है'
+      ];
+
+      var WELCOME_SEP = '　·　';
       var ROW_COUNT   = 10;    // each row is 10% of the viewport height
       var ROW_STAGGER = 150;   // ms between one row starting and the next
       var WIPE_MS     = 450;   // how long a single row takes to wipe across
       var HOLD_MS     = 3500;  // how long the filled screen sits there
+      var SCROLL_PPS  = 130;   // how fast the lettering travels, px per second
 
       // 10 x 150 + 450 = 1800ms to fill, hold, then the same again to clear.
       var FILL_MS = ROW_COUNT * ROW_STAGGER + WIPE_MS;
@@ -1114,38 +1131,87 @@
         while (node.firstChild) { node.removeChild(node.firstChild); }
       }
 
-      /* One span's worth of text: the phrase repeated until it outruns the screen. */
-      function phraseRun() {
-        // CJK glyphs are about one em square, and .cel-text is 7.2vh.
+      // CJK, kana and hangul sit on a full em; everything else is far narrower.
+      var WIDE_RE = /[\u2E80-\u9FFF\uAC00-\uD7AF\uF900-\uFAFF\uFF00-\uFF60]/;
+
+      /* What a given row scrolls: the dancing-fools line, or the welcomes. */
+      function rowText(i) {
+        if (i % 2 === 0) { return CELEBRATION_TEXT; }
+
+        var start = ((i - 1) / 2) % WELCOMES.length;
+        var parts = [];
+
+        for (var n = 0; n < WELCOMES.length; n++) {
+          /*
+            First-strong isolates. Without them the Arabic drags the
+            separators around it to the wrong side, because the bidi
+            algorithm reorders across the whole line rather than per phrase.
+          */
+          parts.push('\u2068' + WELCOMES[(start + n) % WELCOMES.length] + '\u2069');
+        }
+
+        return parts.join(WELCOME_SEP);
+      }
+
+      /*
+        Roughly how wide a string renders at .cel-text's 7.2vh. Erring narrow
+        is deliberate: it asks for more copies than strictly needed, and too
+        many is invisible where too few leaves a gap mid-scroll.
+      */
+      function estimateWidth(text) {
         var glyph = window.innerHeight * 0.072;
-        var phraseWidth = CELEBRATION_TEXT.length * glyph;
-        var copies = Math.max(2, Math.ceil((window.innerWidth * 1.5) / phraseWidth));
+        var width = 0;
+
+        for (var i = 0; i < text.length; i++) {
+          var ch = text.charAt(i);
+          if (ch === '\u2068' || ch === '\u2069') { continue; }   // zero width
+          width += WIDE_RE.test(ch) ? glyph : glyph * 0.45;
+        }
+
+        return width;
+      }
+
+      /* One span's worth: the row's text repeated until it outruns the screen. */
+      function phraseRun(text) {
+        // One copy is enough whenever the text already outruns the screen on
+        // its own, which the six-language rows do several times over.
+        var copies = Math.max(1, Math.ceil((window.innerWidth * 2) / estimateWidth(text)));
         var run = '';
-        for (var i = 0; i < copies; i++) { run += CELEBRATION_TEXT; }
+        for (var i = 0; i < copies; i++) { run += text; }
         return run;
       }
 
       function buildCelebration() {
         empty(celebrationEl);
 
-        var run = phraseRun();
-
         for (var i = 0; i < ROW_COUNT; i++) {
+          var run = phraseRun(rowText(i));
+          var halfWidth = estimateWidth(run);
+
           var row = document.createElement('div');
           row.className = 'cel-row';
           row.style.animationDelay = (i * ROW_STAGGER) + 'ms';
 
           var track = document.createElement('div');
           track.className = 'cel-track';
+
           /*
-            Every row travels the same way. What keeps it from reading as one
-            block of text is the negative delay: it starts each row part-way
-            into the loop, so the phrase boundaries land in a different place
-            on every line. The varied duration then pulls them further apart
-            as it plays.
+            cel-scroll shifts the track by half its own width, so a fixed
+            duration would make a row full of long greetings tear past while
+            a short one crawled. Deriving the duration from the width instead
+            pins every row to the same speed, give or take the per-row nudge
+            that stops them looking mechanical.
           */
-          track.style.animationDuration = (8 + i * 0.6) + 's';
-          track.style.animationDelay = '-' + (i * 1.1) + 's';
+          var duration = halfWidth / (SCROLL_PPS + i * 6);
+          track.style.animationDuration = duration.toFixed(2) + 's';
+
+          /*
+            Every row travels the same way, so what keeps it from reading as
+            one block of text is the negative delay: it starts each row a
+            further step into its own loop, spreading the phrase boundaries
+            right across the cycle.
+          */
+          track.style.animationDelay = '-' + (i * 0.11 * duration).toFixed(2) + 's';
 
           // Two identical halves - the -50% shift in cel-scroll relies on it.
           for (var half = 0; half < 2; half++) {

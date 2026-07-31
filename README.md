@@ -22,11 +22,12 @@ off a single animated hue (`--rb-hue`, registered with `@property` in
 "Submit another response" takes the class back off.
 
 - **Saved** (function returns 201) — the page turns rainbow, then ten
-  full-width panes of sandblasted glass wipe in from the top,
-  each scrolling 踊る阿呆に見る阿呆同じ阿呆なら踊らにゃ損々 in rainbow, hold for
-  a few seconds, then wipe back out from the bottom up onto the confirmation
-  card. Timing lives in the `ROW_*`/`HOLD_MS` constants next to the handler.
-  Skipped entirely for `prefers-reduced-motion`.
+  full-width panes of sandblasted glass wipe in from the top. Even rows scroll
+  踊る阿呆に見る阿呆同じ阿呆なら踊らにゃ損々, odd rows carry the six welcomes
+  from the form description, each row starting on a different one. They hold
+  for a few seconds, then wipe back out from the bottom up onto the
+  confirmation card. Timing lives in the `ROW_*`/`HOLD_MS`/`SCROLL_PPS`
+  constants next to the handler. Skipped for `prefers-reduced-motion`.
 - **Failed** (anything else, including an unreachable function) — the answers
   are not saved, so a dialog says so and OK sends the person to the original
   Google Form, which still accepts responses. Cancel keeps them on the page
