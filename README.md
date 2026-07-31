@@ -8,6 +8,7 @@ netlify/functions/submit.mjs the only code that talks to Supabase
 netlify.toml                 publish dir, /api/submit route, security headers
 .env.example                 the environment variables you need to set
 supabase/migrations/         the schema, as SQL files applied in filename order
+.github/workflows/           applies those migrations on push to main
 test.original.html           the saved Google Form this page is copied from
 ```
 
@@ -22,7 +23,7 @@ question for question.
 | *(none - the original uses your Google account)* | short answer | yes | `email` |
 | おなまえ【フルネーム】 | short answer | yes | `full_name` |
 | Line名 | short answer | yes | `line_name` |
-| finaleTシャツのサイズ | dropdown, S/M/L/XL/XXL | yes | `tshirt_size` |
+| finaleTシャツのサイズ | dropdown, S/M/L/XL/XXL | yes | `tshirt_size` |*
 | W+I&S での学年 | radio, 22/23/24/25/26 | yes | `grade` |
 | finaleでパートを増やしたくない | radio, かまわない！/はい | yes | `extra_parts` |
 | finaleコマでやりたいコンテンツ | short answer | no | `content_idea` |
@@ -30,6 +31,11 @@ question for question.
 The Email question is the one addition. Google Forms fills that in from the
 signed-in account, which only works inside Forms, so the rebuild asks for it as
 an ordinary required text field and validates it on both sides.
+
+\* finaleTシャツのサイズ is a dropdown on the original. The rebuild renders it as
+a radio list instead — a native `<select>` cannot be styled to match Forms
+without replacing it wholesale, and the answer set is short enough to show in
+full. The stored values are unchanged.
 
 The form also opens with a YouTube item (M9 フィナーレ, `QhTF_ZH1AMY`). It has no
 answer and no column.
@@ -47,17 +53,31 @@ what actually keeps it secret.
 
 ## Database setup
 
-The schema lives in `supabase/migrations/`, not in the dashboard. Connect the
-repository under **Project Settings → Integrations → GitHub** and Supabase
-applies any migration it has not run yet on every push to `main`.
+The schema lives in `supabase/migrations/`, not in the dashboard.
+`.github/workflows/migrations.yml` runs `supabase db push` on every push to
+`main`, applying any migration the database has not run yet.
 
-To apply it by hand instead, or the first time before the integration is set up:
+Supabase's own GitHub integration does the same job from the dashboard, but it
+is built on Branching, which needs a paid plan — hence the Action.
+
+It reads three repository secrets, set under **Settings → Secrets and variables
+→ Actions**:
+
+| Secret | Where to find it |
+|---|---|
+| `SUPABASE_ACCESS_TOKEN` | Account settings → Access Tokens → Generate new token |
+| `SUPABASE_DB_PASSWORD` | the database password chosen when the project was created |
+| `SUPABASE_PROJECT_ID` | the project ref — the subdomain in your project URL |
+
+To apply migrations by hand instead:
 
 ```bash
-npm i -g supabase
-supabase link --project-ref <your-project-ref>   # asks for the DB password
-supabase db push
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push
 ```
+
+The CLI does not support `npm i -g supabase`; use `npx`, or `scoop install
+supabase` on Windows.
 
 > The first migration **drops** `public.responses` before creating it, to clear
 > out the placeholder table an earlier version of this project used. Export
@@ -67,7 +87,7 @@ If you already built the table by pasting SQL into the editor, tell Supabase
 that migration is accounted for so it is not run again:
 
 ```bash
-supabase migration repair --status applied 20260801120000
+npx supabase migration repair --status applied 20260801120000
 ```
 
 Leave the table with **no policies**. RLS then denies every anonymous request,
@@ -86,7 +106,7 @@ Never edit a migration that has already run — Supabase tracks them by the
 timestamp in the filename and will skip a file it has seen. Add a new one:
 
 ```bash
-supabase migration new add_some_column
+npx supabase migration new add_some_column
 ```
 
 Write the `alter table` into the file it creates, then push.

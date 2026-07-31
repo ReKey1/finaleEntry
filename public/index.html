@@ -196,6 +196,7 @@
       width: 20px;
       height: 20px;
       margin: 0;
+      padding: 0;   /* Chrome's UA sheet pads inputs asymmetrically */
       background: none;
       border: 2px solid var(--control-off);
       cursor: pointer;
@@ -214,14 +215,16 @@
       box-shadow: 0 0 0 10px var(--accent-focus-bg);
     }
 
-    .option input[type="radio"]:checked { border-color: var(--accent); }
-
-    .option input[type="radio"]:checked::after {
-      content: "";
-      position: absolute;
-      inset: 3px;
-      border-radius: 50%;
-      background-color: var(--accent);
+    /*
+      The inner dot is a background rather than an ::after. A pseudo-element
+      on an <input> is laid out against the padding box, so any UA padding
+      pushes it off centre, and Firefox generates no pseudo-elements on
+      inputs at all. A radial-gradient is centred on the box by definition.
+    */
+    .option input[type="radio"]:checked {
+      border-color: var(--accent);
+      background-image: radial-gradient(circle at center,
+                                        var(--accent) 4.5px, transparent 5px);
     }
 
     .option input[type="checkbox"]:checked {
@@ -290,70 +293,8 @@
       opacity: 1;
     }
 
-    /* ---------- Dropdown ---------- */
-    /*
-      Forms builds its dropdown out of a role="listbox" widget. Same
-      approach as the radios above: keep the native <select> so the
-      platform picker, keyboard and screen readers keep working, and
-      borrow the underline from .Yp9mw plus the arrow_drop_down glyph.
-    */
-    .select-field {
-      position: relative;
-      max-width: min(100%, 336px);
-      border-bottom: 1px solid rgba(0, 0, 0, .12);
-      transition: border-color .2s cubic-bezier(.4, 0, .2, 1);
-      padding-bottom: 8px;
-    }
-
-    .select-field:focus-within { border-bottom-color: var(--accent); }
-
-    .select-field::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: -1px;
-      height: 2px;
-      background-color: var(--accent);
-      transform: scaleX(0);
-      transition: transform .2s cubic-bezier(.4, 0, .2, 1);
-    }
-
-    .select-field:focus-within::before { transform: scaleX(1); }
-
-    .select-field::after {
-      content: "arrow_drop_down";
-      font-family: "Material Icons Extended";
-      font-size: 24px;
-      line-height: 24px;
-      color: var(--text-grey);
-      position: absolute;
-      top: 0;
-      right: 0;
-      pointer-events: none;
-    }
-
-    .select-field select {
-      display: block;
-      width: 100%;
-      background-color: transparent;
-      appearance: none;
-      -webkit-appearance: none;
-      border: none;
-      outline: none;
-      margin: 0;
-      padding: 0 32px 0 0;
-      height: 24px;
-      line-height: 24px;
-      font: 400 16px var(--font-body);
-      color: var(--text);
-      cursor: pointer;
-    }
-
-    .card.has-error .text-field,
-    .card.has-error .select-field { border-bottom-color: var(--error); }
-    .card.has-error .text-field::after,
-    .card.has-error .select-field::before { background-color: var(--error); }
+    .card.has-error .text-field { border-bottom-color: var(--error); }
+    .card.has-error .text-field::after { background-color: var(--error); }
 
     /* ---------- Buttons ---------- */
     /* freebird .UQuaGc - Google Sans 14px/500, 4px radius (not a pill) */
@@ -596,16 +537,27 @@
             finaleTシャツのサイズ<span class="required-star" aria-hidden="true">*</span>
           </h2>
 
-          <div class="select-field">
-            <select id="size-select" name="tshirt_size"
-                    aria-labelledby="size-label" aria-required="true">
-              <option value="">Choose</option>
-              <option value="S">S</option>
-              <option value="M">M</option>
-              <option value="L">L</option>
-              <option value="XL">XL</option>
-              <option value="XXL">XXL</option>
-            </select>
+          <div role="radiogroup" aria-labelledby="size-label" aria-required="true">
+            <label class="option">
+              <input type="radio" name="size" value="S">
+              <span class="label-text">S</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="size" value="M">
+              <span class="label-text">M</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="size" value="L">
+              <span class="label-text">L</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="size" value="XL">
+              <span class="label-text">XL</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="size" value="XXL">
+              <span class="label-text">XXL</span>
+            </label>
           </div>
 
           <p class="error-msg" id="size-error" role="alert">
@@ -651,8 +603,8 @@
 
         <!-- ---------- finaleでパートを増やしたくない ---------- -->
         <!--
-          No "Clear selection" button here or on the question above: Forms
-          drops it once a choice question is required, and both are.
+          No "Clear selection" button here or on the two questions above:
+          Forms drops it once a choice question is required, and all three are.
         -->
         <section class="card" id="parts-card">
           <h2 class="question-title" id="parts-label">
@@ -741,7 +693,7 @@
         { key: 'email',        card: 'email-card',   err: 'email-error',   input: 'email-input',   required: true, email: true },
         { key: 'full_name',    card: 'name-card',    err: 'name-error',    input: 'name-input',    required: true },
         { key: 'line_name',    card: 'line-card',    err: 'line-error',    input: 'line-input',    required: true },
-        { key: 'tshirt_size',  card: 'size-card',    err: 'size-error',    input: 'size-select',   required: true },
+        { key: 'tshirt_size',  card: 'size-card',    err: 'size-error',    group: 'size',          required: true },
         { key: 'grade',        card: 'grade-card',   err: 'grade-error',   group: 'grade',         required: true },
         { key: 'extra_parts',  card: 'parts-card',   err: 'parts-error',   group: 'parts',         required: true },
         { key: 'content_idea', card: 'content-card', err: 'content-error', input: 'content-input', required: false }
@@ -814,8 +766,6 @@
           radiosOf(field).forEach(function (radio) {
             radio.addEventListener('change', recheck);
           });
-        } else if (field.inputEl.tagName === 'SELECT') {
-          field.inputEl.addEventListener('change', recheck);
         } else {
           field.inputEl.addEventListener('input', recheck);
         }
