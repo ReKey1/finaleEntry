@@ -340,22 +340,26 @@
                                         var(--accent) 4.5px, transparent 5px);
     }
 
+    /*
+      The checkmark is a background for the same reason the dot above is:
+      Firefox generates no pseudo-elements on an <input>, so an ::after tick
+      never appears there and a checked box reads as a bare filled square.
+      A background image is not generated content, so every browser paints it.
+
+      White rather than a token because a data URI cannot see --accent; the
+      box underneath already carries the hue. No "#" anywhere in the URI - a
+      raw one truncates it, so a hex colour would have to be written %23fff.
+
+      box-sizing is border-box, so 20px less two 2px borders leaves a 16px
+      padding box, and that is the area a background is laid out against.
+    */
     .option input[type="checkbox"]:checked {
       background-color: var(--accent);
       border-color: var(--accent);
-    }
-
-    /* Checkmark, drawn the same way Material does it */
-    .option input[type="checkbox"]:checked::after {
-      content: "";
-      position: absolute;
-      left: 4px;
-      top: 0;
-      width: 6px;
-      height: 11px;
-      border: solid #fff;
-      border-width: 0 2px 2px 0;
-      transform: rotate(45deg);
+      background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M3.5 8.4 L6.4 11.3 L12.5 5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 16px 16px;
     }
 
     /* ---------- Short answer text field ---------- */
@@ -869,10 +873,84 @@
           </p>
         </section>
 
+        <!-- ---------- 出演予定M ---------- -->
+        <!--
+          Not from the original form - added after the rebuild, see README.md.
+          The one question that takes several answers, so a checkbox group.
+
+          role="group" rather than radiogroup, and deliberately no
+          aria-required: group does not support that property, and putting it
+          on each box instead would claim all twelve are individually
+          mandatory. The asterisk, the required note at the top of the form and
+          the role="alert" message below carry the requirement between them.
+        -->
+        <section class="card" id="ms-card">
+          <h2 class="question-title" id="ms-label">
+            出演予定M<span class="required-star" aria-hidden="true">*</span>
+          </h2>
+
+          <div role="group" aria-labelledby="ms-label">
+            <label class="option">
+              <input type="checkbox" name="ms" value="M1 無限定POP">
+              <span class="label-text">M1 無限定POP</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="※M1 曲内限定">
+              <span class="label-text">※M1 曲内限定</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="M2 無限定GIRLS">
+              <span class="label-text">M2 無限定GIRLS</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="M3 無限定LOCK">
+              <span class="label-text">M3 無限定LOCK</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="M4 無限定JAZZ">
+              <span class="label-text">M4 無限定JAZZ</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="※M4 曲内限定">
+              <span class="label-text">※M4 曲内限定</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="M5 無限定PUNKING">
+              <span class="label-text">M5 無限定PUNKING</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="M6 無限定HOUSE">
+              <span class="label-text">M6 無限定HOUSE</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="※M6 曲内限定">
+              <span class="label-text">※M6 曲内限定</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="M7 限定FREESTYLE">
+              <span class="label-text">M7 限定FREESTYLE</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="M8 無限定HIPHOP">
+              <span class="label-text">M8 無限定HIPHOP</span>
+            </label>
+            <label class="option">
+              <input type="checkbox" name="ms" value="※M8 曲内限定">
+              <span class="label-text">※M8 曲内限定</span>
+            </label>
+          </div>
+
+          <p class="error-msg" id="ms-error" role="alert">
+            <i class="material-icons-extended" aria-hidden="true">error</i>
+            <span>This is a required question</span>
+          </p>
+        </section>
+
         <!-- ---------- finaleでパートを増やしたくない ---------- -->
         <!--
-          No "Clear selection" button here or on the two questions above:
-          Forms drops it once a choice question is required, and all three are.
+          No "Clear selection" button on any of the three radio questions -
+          サイズ, 学年 and this one: Forms drops it once a choice question is
+          required, and all three are.
         -->
         <section class="card" id="parts-card">
           <h2 class="question-title" id="parts-label">
@@ -1001,15 +1079,23 @@
         One entry per answerable question, in the order they appear on the
         page. `key` is the column the answer lands in - keep it in step with
         the row the function builds and with the table in README.md.
+
+        The order is not cosmetic: validate() reports the first bad field in
+        this array and scrolls to it, so an entry out of step with the DOM
+        would scroll the page past an earlier question still showing red.
+
+        `multi` marks the one checkbox question. Its answer is an array rather
+        than a string, which is why valueOf() and isBlank() branch on it.
       */
       var FIELDS = [
-        { key: 'email',        card: 'email-card',   err: 'email-error',   input: 'email-input',   required: true, email: true },
-        { key: 'full_name',    card: 'name-card',    err: 'name-error',    input: 'name-input',    required: true },
-        { key: 'line_name',    card: 'line-card',    err: 'line-error',    input: 'line-input',    required: true },
-        { key: 'tshirt_size',  card: 'size-card',    err: 'size-error',    group: 'size',          required: true },
-        { key: 'grade',        card: 'grade-card',   err: 'grade-error',   group: 'grade',         required: true },
-        { key: 'extra_parts',  card: 'parts-card',   err: 'parts-error',   group: 'parts',         required: true },
-        { key: 'content_idea', card: 'content-card', err: 'content-error', input: 'content-input', required: false }
+        { key: 'email',         card: 'email-card',   err: 'email-error',   input: 'email-input',   required: true, email: true },
+        { key: 'full_name',     card: 'name-card',    err: 'name-error',    input: 'name-input',    required: true },
+        { key: 'line_name',     card: 'line-card',    err: 'line-error',    input: 'line-input',    required: true },
+        { key: 'tshirt_size',   card: 'size-card',    err: 'size-error',    group: 'size',          required: true },
+        { key: 'grade',         card: 'grade-card',   err: 'grade-error',   group: 'grade',         required: true },
+        { key: 'performing_in', card: 'ms-card',      err: 'ms-error',      group: 'ms',            required: true, multi: true },
+        { key: 'extra_parts',   card: 'parts-card',   err: 'parts-error',   group: 'parts',         required: true },
+        { key: 'content_idea',  card: 'content-card', err: 'content-error', input: 'content-input', required: false }
       ];
 
       // Same expression the function uses, so the two agree on what an
@@ -1029,11 +1115,20 @@
         field.inputEl = field.input ? document.getElementById(field.input) : null;
       });
 
-      function radiosOf(field) {
-        return form.querySelectorAll('input[type="radio"][name="' + field.group + '"]');
+      /* Every control in a choice question, radio or checkbox alike. */
+      function controlsOf(field) {
+        return form.querySelectorAll('input[name="' + field.group + '"]');
       }
 
       function valueOf(field) {
+        // Checked before `group`, because a multi field carries one too.
+        if (field.multi) {
+          var picked = [];
+          controlsOf(field).forEach(function (box) {
+            if (box.checked) { picked.push(box.value); }
+          });
+          return picked;
+        }
         if (field.group) {
           var checked = form.querySelector(
             'input[type="radio"][name="' + field.group + '"]:checked');
@@ -1042,10 +1137,15 @@
         return field.inputEl.value.trim();
       }
 
+      /* An unanswered question - '' for one answer, [] for several. */
+      function isBlank(field, value) {
+        return field.multi ? value.length === 0 : !value;
+      }
+
       /** Returns the message to show under the question, or null when it is fine. */
       function problemWith(field) {
         var value = valueOf(field);
-        if (!value) {
+        if (isBlank(field, value)) {
           return field.required ? 'This is a required question' : null;
         }
         if (field.email && !EMAIL_RE.test(value)) {
@@ -1077,8 +1177,8 @@
         }
 
         if (field.group) {
-          radiosOf(field).forEach(function (radio) {
-            radio.addEventListener('change', recheck);
+          controlsOf(field).forEach(function (control) {
+            control.addEventListener('change', recheck);
           });
         } else {
           field.inputEl.addEventListener('input', recheck);
@@ -1092,11 +1192,21 @@
         FIELDS.forEach(function (field) {
           var message = problemWith(field);
           setError(field, message);
-          if (message && !firstBad) { firstBad = field.cardEl; }
+          if (message && !firstBad) { firstBad = field; }
         });
 
         if (firstBad) {
-          firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          /*
+            A card taller than the window - 出演予定M, on a short screen -
+            cannot be centred without pushing its own error message off the
+            bottom, and on a choice question that message is the only thing
+            marking the card as wrong. Aim at the message instead.
+          */
+          var target =
+            firstBad.cardEl.getBoundingClientRect().height > window.innerHeight
+              ? firstBad.errEl
+              : firstBad.cardEl;
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
         return !firstBad;
       }
@@ -1105,7 +1215,8 @@
       function buildRow() {
         var row = {};
         FIELDS.forEach(function (field) {
-          row[field.key] = valueOf(field) || null;
+          var value = valueOf(field);
+          row[field.key] = isBlank(field, value) ? null : value;
         });
         return row;
       }
@@ -1335,7 +1446,7 @@
       function resetAnswers() {
         FIELDS.forEach(function (field) {
           if (field.group) {
-            radiosOf(field).forEach(function (radio) { radio.checked = false; });
+            controlsOf(field).forEach(function (control) { control.checked = false; });
           } else {
             field.inputEl.value = '';
           }

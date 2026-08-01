@@ -33,13 +33,15 @@ off a single animated hue (`--rb-hue`, registered with `@property` in
   are not saved, so a dialog says so and OK sends the person to the original
   Google Form, which still accepts responses. Cancel keeps them on the page
   with their answers and a link to that form. `BACKUP_FORM_URL` holds the
-  address. Client-side validation failures do not trigger this.
+  address. Client-side validation failures do not trigger this. The backup form
+  has no 出演予定M question, so that one answer is lost on this path — see the
+  note under the table below.
 
 ## Questions and columns
 
 `test.original.html` is the saved original. Everything below was read out of the
 `FB_PUBLIC_LOAD_DATA_` blob in that file, and `public/index.html` reproduces it
-question for question.
+question for question — bar the two marked additions.
 
 | Question | Type | Required | Column |
 |---|---|---|---|
@@ -48,6 +50,7 @@ question for question.
 | Line名 | short answer | yes | `line_name` |
 | finaleTシャツのサイズ | dropdown, S/M/L/XL/XXL | yes | `tshirt_size` |*
 | W+I&S での学年 | radio, 22/23/24/25/26 | yes | `grade` |
+| 出演予定M | checkboxes, 12 options | yes | `performing_in` |‡
 | finaleでパートを増やしたくない | radio, かまわない！/はい | yes | `extra_parts` |
 | finaleコマでやりたいコンテンツ | short answer | no | `content_idea` |
 
@@ -64,6 +67,20 @@ Google Form does not ask for it.
 a radio list instead — a native `<select>` cannot be styled to match Forms
 without replacing it wholesale, and the answer set is short enough to show in
 full. The stored values are unchanged.
+
+‡ 出演予定M is not on the original form at all — it was added after the rebuild,
+and it is the only question that takes more than one answer, hence the `text[]`
+column. **The backup Google Form does not ask for it either**, so a failed
+submit loses this answer even when the person fills the backup in. Adding the
+question to that form is the real fix and is outside this repository.
+
+The twelve options live in two places that must agree exactly: the `value`
+attributes in `public/index.html` and `MS_OPTIONS` in
+`netlify/functions/submit.mjs`. A single character of drift — an ideographic
+space U+3000 where the other file has an ASCII one, say — makes the function
+reject every response that ticks that option, and a rejection reaches the
+person as the same fatal dialog a server outage would. Copy the block between
+the files; do not retype it.
 
 The form also opens with a YouTube item (M9 フィナーレ, `QhTF_ZH1AMY`). It has no
 answer and no column.
@@ -151,6 +168,19 @@ free text that gets exported to CSV, so the function neutralises them on the way
 in. If you see a name starting with `'`, that is why; the apostrophe is not
 shown once the spreadsheet reads it as text.
 
+`performing_in` is an array, so the CSV cell is a Postgres array literal —
+`{"M1 無限定POP","※M4 曲内限定"}`. Rows written before 2026-08-01 predate the
+question and are `NULL`, not empty. Counting per song is the reason the column
+is `text[]` rather than one joined string:
+
+```sql
+select count(*) from public.responses where 'M2 無限定GIRLS' = any(performing_in);
+
+-- or a headcount for every option at once
+select m, count(*) from public.responses, unnest(performing_in) as m
+group by m order by count(*) desc;
+```
+
 ### Changing the schema later
 
 Never edit a migration that has already run — Supabase tracks them by the
@@ -210,10 +240,22 @@ A question lives in three places, and all three have to agree:
 
 1. **`public/index.html`** — the card markup, plus one entry in the `FIELDS`
    array in the script. `key` is the column name; `required` drives both the
-   asterisk and the validation.
+   asterisk and the validation; `multi: true` marks a checkbox question, whose
+   answer is an array rather than a string. Put the entry at the same position
+   the card sits at in the page: `validate()` reports the first bad field in
+   array order and scrolls to it, so an entry out of step scrolls past an
+   earlier question still showing red.
 2. **`netlify/functions/submit.mjs`** — a line in the `row` object and a check
    in `validate()`. Closed lists have their own set: `ALLOWED_SIZES`,
-   `ALLOWED_GRADES`, `ALLOWED_PARTS`. Rename an option in the page and you must
-   rename it in the matching set, or the function will reject it.
-3. **`public.responses`** — a column with the same name as `key`. The function
-   sends the row as-is, so an unknown key makes Supabase reject the insert.
+   `ALLOWED_GRADES`, `ALLOWED_PARTS`, `ALLOWED_MS`. Rename an option in the page
+   and you must rename it in the matching set, or the function will reject it.
+3. **`public.responses`** — a column with the same name as `key`, `text[]` for a
+   multi-select and `text` otherwise. The function sends the row as-is, so an
+   unknown key makes Supabase reject the insert.
+
+Adding a column has an ordering hazard. The migrations workflow only runs on a
+push that touches `supabase/migrations/`, while Netlify redeploys on every push
+and does not wait for it, so shipping all three in one commit can serve a page
+that writes a column the database does not have yet — and every submission in
+that window ends on the fatal dialog. **Push the migration on its own, wait for
+the Actions run to go green, then push the page and the function.**

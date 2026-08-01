@@ -23,6 +23,26 @@ const ALLOWED_SIZES = new Set(['S', 'M', 'L', 'XL', 'XXL']);
 const ALLOWED_GRADES = new Set(['22', '23', '24', '25', '26']);
 const ALLOWED_PARTS = new Set(['かまわない！', 'はい']);
 
+// 出演予定M is the one multi-answer question, so it keeps the array as well as
+// the set: validate() needs the count, and the order is the order the page
+// lists them in. Copy this block to and from public/index.html rather than
+// retyping it — see README.md.
+const MS_OPTIONS = [
+  'M1 無限定POP',
+  '※M1 曲内限定',
+  'M2 無限定GIRLS',
+  'M3 無限定LOCK',
+  'M4 無限定JAZZ',
+  '※M4 曲内限定',
+  'M5 無限定PUNKING',
+  'M6 無限定HOUSE',
+  '※M6 曲内限定',
+  'M7 限定FREESTYLE',
+  'M8 無限定HIPHOP',
+  '※M8 曲内限定',
+];
+const ALLOWED_MS = new Set(MS_OPTIONS);
+
 const MAX_NAME_LENGTH = 200;
 const MAX_EMAIL_LENGTH = 320;
 const MAX_TEXT_LENGTH = 1000;
@@ -44,6 +64,15 @@ function json(status, body) {
 
 function str(value) {
   return typeof value === 'string' ? value.trim() : '';
+}
+
+/**
+ * The multi-answer counterpart to str(). Fails closed: anything that is not an
+ * array of strings — a bare string, an object, a missing key — comes back as
+ * [], which validate() then rejects as an unanswered required question.
+ */
+function strArray(value) {
+  return Array.isArray(value) ? value.map(str).filter(Boolean) : [];
 }
 
 /**
@@ -135,6 +164,16 @@ function validate(row) {
   if (!row.grade) return 'Year is required.';
   if (!ALLOWED_GRADES.has(row.grade)) return 'Unrecognised option.';
 
+  // The allow-list and the duplicate check between them already cap the stored
+  // length at twelve. The explicit cap is first only so a pathological body is
+  // turned away before two full passes over it.
+  if (!row.performing_in.length) return 'This is a required question.';
+  if (row.performing_in.length > MS_OPTIONS.length) return 'Unrecognised option.';
+  if (row.performing_in.some((m) => !ALLOWED_MS.has(m))) return 'Unrecognised option.';
+  if (new Set(row.performing_in).size !== row.performing_in.length) {
+    return 'Unrecognised option.';
+  }
+
   if (!row.extra_parts) return 'This is a required question.';
   if (!ALLOWED_PARTS.has(row.extra_parts)) return 'Unrecognised option.';
 
@@ -193,6 +232,10 @@ export default async (req) => {
     line_name: str(payload.line_name),
     tshirt_size: str(payload.tshirt_size),
     grade: str(payload.grade),
+    // Sent as a JSON array and inserted as one: PostgREST coerces it into the
+    // text[] column. Building a '{...}' literal here would only move the
+    // quoting and escaping off Postgres and onto us.
+    performing_in: strArray(payload.performing_in),
     extra_parts: str(payload.extra_parts),
     content_idea: str(payload.content_idea) || null,
   };
