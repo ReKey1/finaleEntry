@@ -44,7 +44,7 @@ question for question.
 | Question | Type | Required | Column |
 |---|---|---|---|
 | *(none - the original uses your Google account)* | short answer | yes | `email` |
-| おなまえ【フルネーム】 | short answer | yes | `full_name` |
+| おなまえ【フルネーム】（ふりがな） | short answer | yes | `full_name` |†
 | Line名 | short answer | yes | `line_name` |
 | finaleTシャツのサイズ | dropdown, S/M/L/XL/XXL | yes | `tshirt_size` |*
 | W+I&S での学年 | radio, 22/23/24/25/26 | yes | `grade` |
@@ -54,6 +54,11 @@ question for question.
 The Email question is the one addition. Google Forms fills that in from the
 signed-in account, which only works inside Forms, so the rebuild asks for it as
 an ordinary required text field and validates it on both sides.
+
+† The original title is just おなまえ【フルネーム】. （ふりがな） was added here so
+the one answer carries the reading as well; it is still a single question
+writing to a single column, so nothing downstream changes. Note the backup
+Google Form does not ask for it.
 
 \* finaleTシャツのサイズ is a dropdown on the original. The rebuild renders it as
 a radio list instead — a native `<select>` cannot be styled to match Forms
