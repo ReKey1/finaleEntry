@@ -719,7 +719,7 @@
           <!-- Description markup copied from the original page -->
           <div class="form-description" dir="auto"><div>ようこそ、23の世界へ&nbsp;</div>welcome to 23 world<div><span>23의 세계에 오신 것을 환영합니다</span><div>&nbsp; مرحبًا بكم في عالم23&nbsp;</div><div><span>欢迎来到23的世界</span></div><div><span>23 की दुनिया में आपका स्वागत है&nbsp;&nbsp;</span></div><div>&nbsp;&nbsp;</div></div></div>
 
-          <p class="required-note">* Indicates required question</p>
+          <p class="required-note">* 必須の質問です</p>
         </section>
 
         <!-- ---------- Video ---------- -->
@@ -748,18 +748,18 @@
         -->
         <section class="card" id="email-card">
           <h2 class="question-title" id="email-label">
-            Email<span class="required-star" aria-hidden="true">*</span>
+            メールアドレス<span class="required-star" aria-hidden="true">*</span>
           </h2>
 
           <div class="text-field">
             <input type="email" id="email-input" name="email"
-                   placeholder="Your answer" autocomplete="email"
+                   placeholder="回答を入力" autocomplete="email"
                    aria-labelledby="email-label" aria-required="true">
           </div>
 
           <p class="error-msg" id="email-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
-            <span>This is a required question</span>
+            <span>必須の質問です</span>
           </p>
         </section>
 
@@ -775,13 +775,13 @@
 
           <div class="text-field">
             <input type="text" id="name-input" name="full_name"
-                   placeholder="Your answer" autocomplete="name"
+                   placeholder="回答を入力" autocomplete="name"
                    aria-labelledby="name-label" aria-required="true">
           </div>
 
           <p class="error-msg" id="name-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
-            <span>This is a required question</span>
+            <span>必須の質問です</span>
           </p>
         </section>
 
@@ -793,13 +793,13 @@
 
           <div class="text-field">
             <input type="text" id="line-input" name="line_name"
-                   placeholder="Your answer"
+                   placeholder="回答を入力"
                    aria-labelledby="line-label" aria-required="true">
           </div>
 
           <p class="error-msg" id="line-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
-            <span>This is a required question</span>
+            <span>必須の質問です</span>
           </p>
         </section>
 
@@ -834,7 +834,7 @@
 
           <p class="error-msg" id="size-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
-            <span>This is a required question</span>
+            <span>必須の質問です</span>
           </p>
         </section>
 
@@ -869,7 +869,7 @@
 
           <p class="error-msg" id="grade-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
-            <span>This is a required question</span>
+            <span>必須の質問です</span>
           </p>
         </section>
 
@@ -942,7 +942,7 @@
 
           <p class="error-msg" id="ms-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
-            <span>This is a required question</span>
+            <span>必須の質問です</span>
           </p>
         </section>
 
@@ -970,7 +970,7 @@
 
           <p class="error-msg" id="parts-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
-            <span>This is a required question</span>
+            <span>必須の質問です</span>
           </p>
         </section>
 
@@ -980,12 +980,12 @@
 
           <div class="text-field">
             <input type="text" id="content-input" name="content_idea"
-                   placeholder="Your answer" aria-labelledby="content-label">
+                   placeholder="回答を入力" aria-labelledby="content-label">
           </div>
 
           <p class="error-msg" id="content-error" role="alert">
             <i class="material-icons-extended" aria-hidden="true">error</i>
-            <span>This is a required question</span>
+            <span>必須の質問です</span>
           </p>
         </section>
 
@@ -993,8 +993,8 @@
         <p class="status" id="status" hidden role="status"></p>
 
         <div class="actions">
-          <button type="submit" class="btn btn-filled" id="submit-btn">Submit</button>
-          <button type="button" class="btn btn-text" id="clear-form">Clear form</button>
+          <button type="submit" class="btn btn-filled" id="submit-btn">送信</button>
+          <button type="button" class="btn btn-text" id="clear-form">フォームをクリア</button>
         </div>
       </form>
     </div>
@@ -1002,12 +1002,12 @@
     <!-- ==================== Confirmation ==================== -->
     <section class="card confirmation" id="confirmation" tabindex="-1">
       <h1 class="form-title">23引退公演finaleエントリーフォーム</h1>
-      <p class="label-text">Your response has been recorded.</p>
-      <p><button type="button" class="btn-link" id="submit-another">Submit another response</button></p>
+      <p class="label-text">回答を記録しました。</p>
+      <p><button type="button" class="btn-link" id="submit-another">別の回答を送信</button></p>
     </section>
 
     <footer>
-      <p>This content is neither created nor endorsed by Google.</p>
+      <p>このコンテンツは Google が作成または承認したものではありません。</p>
     </footer>
   </main>
 
@@ -1043,8 +1043,8 @@
 
       var FATAL_MESSAGE =
         '送信に失敗しました。回答は保存されていません。\n\n' +
-        'A fatal error occurred and your answers were NOT recorded. ' +
-        'Press OK to open the backup form - you will need to fill it out again.';
+        'OK を押すとバックアップフォームが開きます。' +
+        'お手数ですが、もう一度ご記入ください。';
 
       /* ---------- Celebration timings ---------- */
       var CELEBRATION_TEXT = '踊る阿呆に見る阿呆同じ阿呆なら踊らにゃ損々';
@@ -1146,10 +1146,10 @@
       function problemWith(field) {
         var value = valueOf(field);
         if (isBlank(field, value)) {
-          return field.required ? 'This is a required question' : null;
+          return field.required ? '必須の質問です' : null;
         }
         if (field.email && !EMAIL_RE.test(value)) {
-          return 'Please enter a valid email address';
+          return '有効なメールアドレスを入力してください';
         }
         return null;
       }
@@ -1231,14 +1231,14 @@
           return res.json().catch(function () { return {}; })
             .then(function (body) {
               if (res.ok) { return; }
-              throw new Error(body.error || ('Submission failed (' + res.status + ').'));
+              throw new Error(body.error || ('送信に失敗しました（' + res.status + '）。'));
             });
         }, function (networkError) {
           // fetch() only rejects when the request never completed.
           console.error(networkError);
           throw new Error(
-            'Could not reach the server. If you opened this file directly, ' +
-            'start it with "netlify dev" and use the address it prints.'
+            'サーバーに接続できませんでした。このファイルを直接開いている場合は、' +
+            '"netlify dev" で起動し、表示されたアドレスからアクセスしてください。'
           );
         });
       }
@@ -1390,7 +1390,7 @@
         link.href = BACKUP_FORM_URL;
         link.target = '_blank';
         link.rel = 'noopener';
-        link.textContent = 'Open the backup form';
+        link.textContent = 'バックアップフォームを開く';
 
         statusEl.appendChild(document.createTextNode(' '));
         statusEl.appendChild(link);
@@ -1404,7 +1404,7 @@
         if (!validate()) { return; }
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Submitting…';
+        submitBtn.textContent = '送信中…';
 
         saveResponse(buildRow())
           .then(function () {
@@ -1438,7 +1438,7 @@
           })
           .then(function () {
             submitBtn.disabled = false;
-            submitBtn.textContent = 'Submit';
+            submitBtn.textContent = '送信';
           });
       });
 
@@ -1456,7 +1456,7 @@
       }
 
       document.getElementById('clear-form').addEventListener('click', function () {
-        if (window.confirm('Clear form?\nThis will remove your answers from all questions.')) {
+        if (window.confirm('フォームをクリアしますか？\nすべての質問の回答が削除されます。')) {
           resetAnswers();
         }
       });
